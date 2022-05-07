@@ -21,8 +21,8 @@ RZ_AT_climate<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_ATclimate.xlsx")
 
 ##### All AT clim vars and double brooding rate
 ## dataframe manipulation
-RZ_ld_df <- RZ_AT_climate %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
-        select(site, year, mean_first_egg, lag1_pptAT03_05, lag2_pptAT03_05, lag1_pptAT11_02, lag1_tminAT11_02, lag1_tmaxAT11_02) %>% # select only the columns site, year and dbr
+RZ_ld_df <- RZ_AT_climate %>% 
+        select(site, year, mean_first_egg, lag1_pptAT03_05, lag2_pptAT03_05, lag1_pptAT11_02, lag1_tminAT11_02, lag1_tmaxAT11_02) %>% 
         na.omit(RZ_AT_climate) # remove all rows with NA
 
 ## histogram of territory_occupancy data
@@ -79,14 +79,532 @@ testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
 ## using sjPlot package
 plot_model(lag1_tmaxAT11_02.lmm3, type = "diag") # random effect QQ-plot
 
-###################################################################
-
-############### Atlas climate variables ################
 
 ###################################################################
 
 ############### UK climate variables ################
 
+####################################################################
+####################################################################
+
+########### UK ppt ###########
+
+RZ_UK_ppt<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_ppt2.xlsx")
+
+RZ_ld_df <- RZ_UK_ppt %>% 
+  select(site, year, mean_first_egg, pptUK03_04, pptUK05_06, lag1_pptUK07_08) %>%
+  na.omit(RZ_UK_ppt) # remove all rows with NA
+
+##########################################
+
+##### March-April ppt (within_site_pptUK03_04)
+
+# LMM with year and site random effects
+pptUK03_04.lmm1 <- lmer(mean_first_egg~scale(year)+pptUK03_04+(1|year)+(1|site), data=RZ_ld_df)
+summary(pptUK03_04.lmm1) 
+
+##### May-June ppt (within_site_pptUK05_06)
+
+# LMM with year and site random effects
+pptUK05_06.lmm1 <- lmer(mean_first_egg~scale(year)+pptUK05_06+(1|year)+(1|site), data=RZ_ld_df)
+summary(pptUK05_06.lmm1)
+
+##### July-August ppt the year before breeding (lag1_pptUK07_08)
+
+# LMM with year and site random effects
+lag1_pptUK07_08.lmm1 <- lmer(mean_first_egg~scale(year)+lag1_pptUK07_08+(1|year)+(1|site), data=RZ_ld_df)
+summary(lag1_pptUK07_08.lmm1)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_pptUK07_08.lmm3)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(lag1_pptUK07_08.lmm3, type = "diag") # random effect QQ-plot
+## assumptions satisfied
+
+
+############################################################
+################ NO EFFECTS OF UK PPT ON LD ################
+
+### plot glmm using ggeffects
+# create df of predicted values for each year based on the glmm
+pred.mm <- ggpredict(pptUK03_04.lmm1, terms = c("within_site_pptUK03_04"))  # this gives overall predictions for the model
+# plot the predictions 
+(ggplot(pred.mm) + 
+    geom_line(aes(x = x, y = predicted)) + # slope         
+    geom_point(data = RZ_UK_ppt4, aes(x = within_site_pptUK03_04, y = territory_occupancy, colour = site)) + # adding the raw data (scaled values)
+    geom_ribbon(aes(x = x, ymin = predicted - std.error, ymax = predicted + std.error), 
+                fill = "lightgrey", alpha = 0.5) +  # error band
+    labs(x = "Within-site March-April precipitation (mm)", y = "Territory occupancy", title = "") + 
+    theme_classic() +
+    labs(color = "Site") +
+    scale_colour_discrete(labels=c("Glen Clunie", "Glen Effock", "Glen Esk", "Haweswater", "Long Mynd", "Rosedale"))
+)
+
+####################################################################
+####################################################################
+
+########### UK snow ###########
+
+RZ_UK_snow<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_snow3.xlsx")
+
+LD_snow_df <- RZ_UK_snow %>%
+  select(site, year, mean_first_egg, within_site_march_snow, within_site_april_snow, within_site_snowUK03_04) %>% 
+  na.omit(RZ_UK_snow) # remove all rows with NA
+
+##########################################
+
+##### March-April snow (within_site_snowUK03_04)
+
+# LMM with year and site random effects
+snowUK03_04.lmm1 <- lmer(mean_first_egg~scale(year)+within_site_snowUK03_04+(1|year)+(1|site), data=LD_snow_df)
+summary(snowUK03_04.lmm1) 
+# model with site:clim_var interaction to test whether the climate effect slope differs between sites
+snowUK03_04.lmm2 <- lmer(mean_first_egg~scale(year)+within_site_snowUK03_04+within_site_snowUK03_04:site+(1|site)+(1|year), data=LD_snow_df)
+# compare models
+anova(snowUK03_04.lmm1, snowUK03_04.lmm2) # effect of year+clim_var
+# no site:clim_var interaction 
+
+##### March snow (within_site_march_snow)
+
+# LMM with year and site random effects
+snowUK03.lmm1 <- lmer(mean_first_egg~scale(year)+within_site_march_snow+(1|year)+(1|site), data=LD_snow_df)
+summary(snowUK03.lmm1) 
+
+##### April snow (within_site_april_snow)
+
+# LMM with year and site random effects
+snowUK04.lmm1 <- lmer(mean_first_egg~scale(year)+within_site_april_snow+(1|year)+(1|site), data=LD_snow_df)
+summary(snowUK04.lmm1) 
+# model with site:clim_var interaction to test whether the climate effect slope differs between sites
+snowUK04.lmm2 <- lmer(mean_first_egg~scale(year)+within_site_april_snow+within_site_april_snow:site+(1|site)+(1|year), data=LD_snow_df)
+summary(snowUK04.lmm2)
+# compare models
+anova(snowUK04.lmm1, snowUK04.lmm2) # effect of year+clim_var
+# slopes are not different between sites
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = snowUK04.lmm1)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(snowUK04.lmm1, type = "diag") # random effect QQ-plot
+## assumptions satisfied
+
+## April snow
+pred.mm1 <- ggpredict(snowUK04.lmm1, terms = c("within_site_april_snow"))  # this gives overall predictions for the model
+# plot the predictions 
+p1 <- (ggplot(pred.mm1) + 
+         geom_line(aes(x = x, y = predicted)) + # slope         
+         geom_point(data = LD_snow_df, aes(x = within_site_april_snow, y = mean_first_egg, color=site)) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "Within-site April snow-lying days", y = "First brood laying date (April days)", title = "") + 
+         theme_classic() +
+         scale_color_manual(values=c("#4477AA", "#CCBB44", "#AA3377"),
+                            labels=c("Glen Clunie", "Glen Effock", "Rosedale"))
+         )
+p1
+
+####################################################################
+####################################################################
+
+########### UK tmean ###########
+
+RZ_UK_tmean<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmean2.xlsx")
+
+RZ_ld_df <- RZ_UK_tmean %>% 
+  select(site, year, mean_first_egg, tmeanUK03_04, tmeanUK05_06, lag1_tmeanUK07_08) %>% 
+  na.omit(RZ_UK_tmean) # remove all rows with NA
+
+##########################################
+
+##### March-April tmean (within_site_tmeanUK03_04)
+
+# LMM with year and site random effects
+tmeanUK03_04.lmm1 <- lmer(mean_first_egg~scale(year)+tmeanUK03_04+(1|year)+(1|site), data=RZ_ld_df)
+summary(tmeanUK03_04.lmm1) 
+
+##### May-June tmean (within_site_tmeanUK05_06)
+
+# LMM with year and site random effects
+tmeanUK05_06.lmm1 <- lmer(mean_first_egg~scale(year)+tmeanUK05_06+(1|year)+(1|site), data=RZ_ld_df)
+summary(tmeanUK05_06.lmm1)
+
+##### July-August tmean the year before breeding (lag1_tmeanUK07_08)
+
+# LMM with year and site random effects
+lag1_tmeanUK07_08.lmm1 <- lmer(mean_first_egg~scale(year)+lag1_tmeanUK07_08+(1|year)+(1|site), data=RZ_ld_df)
+summary(lag1_tmeanUK07_08.lmm1)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_pptUK07_08.lmm3)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(lag1_pptUK07_08.lmm3, type = "diag") # random effect QQ-plot
+## assumptions satisfied
+
+
+############################################################
+################ NO EFFECTS OF UK TMEAN ON LD ################
+
+### plot glmm using ggeffects
+# create df of predicted values for each year based on the glmm
+pred.mm <- ggpredict(tmeanUK03_04.lmm3, terms = c("tmeanUK03_04"))  # this gives overall predictions for the model
+# plot the predictions 
+(ggplot(pred.mm) + 
+    geom_line(aes(x = x, y = predicted)) + # slope         
+    geom_point(data = RZ_ld_df, aes(x = tmeanUK03_04, y = mean_first_egg, colour = site)) + # adding the raw data (scaled values)
+    geom_ribbon(aes(x = x, ymin = predicted - std.error, ymax = predicted + std.error), 
+                fill = "lightgrey", alpha = 0.5) +  # error band
+    labs(x = "Within-site March-April mean temperature" ~degree~C, y = "Mean first egg laying date (April days)", title = "") + 
+    theme_classic() +
+    labs(color = "Site") +
+    scale_colour_discrete(labels=c("Glen Clunie", "Glen Effock", "Rosedale"))
+)
+
+
+####################################################################
+####################################################################
+
+########### UK tmin ###########
+
+RZ_UK_tmin<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmin2.xlsx")
+
+ld_tmin_df <- RZ_UK_tmin %>% 
+  select(site, year, mean_first_egg, tminUK03_04, tminUK05_06, lag1_tminUK07_08) %>% 
+  na.omit(RZ_UK_tmin) # remove all rows with NA
+
+##########################################
+
+##### March-April tmin (within_site_tminUK03_04)
+
+# LMM with year and site random effects
+tminUK03_04.lmm1 <- lmer(mean_first_egg~scale(year)+tminUK03_04+(1|year)+(1|site), data=ld_tmin_df)
+summary(tminUK03_04.lmm1) 
+# model with site:clim_var interaction to test whether the climate effect slope differs between sites
+tminUK03_04.lmm2 <- lmer(mean_first_egg~scale(year)+tminUK03_04+tminUK03_04:site+(1|site)+(1|year), data=ld_tmin_df)
+summary(tminUK03_04.lmm2)
+# compare models
+anova(tminUK03_04.lmm1, tminUK03_04.lmm2) # effect of year+clim_var
+# slopes are not different between sites
+
+## April snow
+pred.mm2 <- ggpredict(tminUK03_04.lmm1, terms = c("tminUK03_04"))  # this gives overall predictions for the model
+# plot the predictions 
+p2 <- (ggplot(pred.mm2) + 
+         geom_line(aes(x = x, y = predicted)) + # slope         
+         geom_point(data = ld_tmin_df, aes(x = tminUK03_04, y = mean_first_egg, color=site)) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "Within-site March-April minimum temperature °C", y = "First brood laying date (April days)", title = "") + 
+         theme_classic() +
+         labs(color = "Site") +
+         scale_color_manual(values=c("#4477AA", "#CCBB44", "#AA3377"),
+                            labels=c("Glen Clunie", "Glen Effock", "Rosedale"))
+)
+p2
+
+### plot glmm using ggeffects
+# create df of predicted values for each year based on the glmm
+pred.mm <- ggpredict(tminUK03_04.lmm1, terms = c("tminUK03_04"))  # this gives overall predictions for the model
+# plot the predictions 
+(ggplot(pred.mm) + 
+    geom_line(aes(x = x, y = predicted)) + # slope         
+    geom_point(data = RZ_ld_df, aes(x = tminUK03_04, y = mean_first_egg, colour = site)) + # adding the raw data (scaled values)
+    geom_ribbon(aes(x = x, ymin = predicted - std.error, ymax = predicted + std.error), 
+                fill = "lightgrey", alpha = 0.5) +  # error band
+    labs(x = "Within-site March-April minimum temperature" ~degree~C, y = "Mean first egg laying date (April days)", title = "") + 
+    theme_classic() +
+    labs(color = "Site") +
+    scale_colour_discrete(labels=c("Glen Clunie", "Glen Effock", "Rosedale"))
+)
+
+##########################################
+
+##### May-June tmean (within_site_tmeanUK05_06)
+
+# LMM with year and site random effects
+tminUK05_06.lmm1 <- lmer(mean_first_egg~scale(year)+tminUK05_06+(1|year)+(1|site), data=RZ_ld_df)
+summary(tminUK05_06.lmm1)
+
+##### July-August tmin the year before breeding (lag1_tmeanUK07_08)
+
+# LMM with year and site random effects
+lag1_tminUK07_08.lmm1 <- lmer(mean_first_egg~scale(year)+lag1_tminUK07_08+(1|year)+(1|site), data=RZ_ld_df)
+summary(lag1_tminUK07_08.lmm1)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_pptUK07_08.lmm3)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(lag1_pptUK07_08.lmm3, type = "diag") # random effect QQ-plot
+## assumptions satisfied
+
+
+############################################################
+################ NO EFFECTS OF UK TMEAN ON LD ################
+
+### plot glmm using ggeffects
+# create df of predicted values for each year based on the glmm
+pred.mm <- ggpredict(pptUK03_04.lmm1, terms = c("within_site_pptUK03_04"))  # this gives overall predictions for the model
+# plot the predictions 
+(ggplot(pred.mm) + 
+    geom_line(aes(x = x, y = predicted)) + # slope         
+    geom_point(data = RZ_UK_ppt4, aes(x = within_site_pptUK03_04, y = territory_occupancy, colour = site)) + # adding the raw data (scaled values)
+    geom_ribbon(aes(x = x, ymin = predicted - std.error, ymax = predicted + std.error), 
+                fill = "lightgrey", alpha = 0.5) +  # error band
+    labs(x = "Within-site March-April precipitation (mm)", y = "Territory occupancy", title = "") + 
+    theme_classic() +
+    labs(color = "Site") +
+    scale_colour_discrete(labels=c("Glen Clunie", "Glen Effock", "Glen Esk", "Haweswater", "Long Mynd", "Rosedale"))
+)
+
+####################################################################
+####################################################################
+
+########### UK tmax ###########
+
+RZ_UK_tmax<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmax2.xlsx")
+
+RZ_ld_df <- RZ_UK_tmax %>% 
+  select(site, year, mean_first_egg, tmaxUK03_04, tmaxUK05_06, lag1_tmaxUK07_08) %>% 
+  na.omit(RZ_UK_tmax) # remove all rows with NA
+
+##########################################
+
+##### March-April tmax (within_site_tmaxUK03_04)
+
+# LMM with year and site random effects
+tmaxUK03_04.lmm1 <- lmer(mean_first_egg~scale(year)+tmaxUK03_04+(1|year)+(1|site), data=RZ_ld_df)
+summary(tmaxUK03_04.lmm1) 
+
+### plot glmm using ggeffects
+# create df of predicted values for each year based on the glmm
+pred.mm <- ggpredict(tmaxUK03_04.lmm1, terms = c("tmaxUK03_04"))  # this gives overall predictions for the model
+# plot the predictions 
+(ggplot(pred.mm) + 
+    geom_line(aes(x = x, y = predicted)) + # slope         
+    geom_point(data = RZ_ld_df, aes(x = tmaxUK03_04, y = mean_first_egg, colour = site)) + # adding the raw data (scaled values)
+    geom_ribbon(aes(x = x, ymin = predicted - std.error, ymax = predicted + std.error), 
+                fill = "lightgrey", alpha = 0.5) +  # error band
+    labs(x = "Within-site March-April precipitation (mm)", y = "Mean first egg laying date (April days)", title = "") + 
+    theme_classic() +
+    labs(color = "Site") +
+    scale_colour_discrete(labels=c("Glen Clunie", "Glen Effock", "Glen Esk", "Haweswater", "Long Mynd", "Rosedale"))
+)
+
+##########################################
+
+##### May-June tmax (tmaxUK05_06)
+
+# LMM with year and site random effects
+tmaxUK05_06.lmm1 <- lmer(mean_first_egg~scale(year)+tmaxUK05_06+(1|year)+(1|site), data=RZ_ld_df)
+summary(tmaxUK05_06.lmm1) 
+
+##### July-August tmax the year before breeding (lag1_tmaxUK07_08)
+
+# LMM with year and site random effects
+lag1_tmaxUK07_08.lmm1 <- lmer(mean_first_egg~scale(year)+lag1_tmaxUK07_08+(1|year)+(1|site), data=RZ_ld_df)
+summary(lag1_tmaxUK07_08.lmm1) 
+
+
+###########################
+
+### calculate percent change in TO between first and last year
+percent_change <- exp(pred.mm[18, "predicted"]) - exp(pred.mm[1, "predicted"])
+
+exp(pred.mm[18, "predicted"])
+
+### plot significant results
+
+## April snow
+pred.mm1 <- ggpredict(snowUK04.lmm1, terms = c("within_site_april_snow"))  # this gives overall predictions for the model
+# plot the predictions 
+p1 <- (ggplot(pred.mm1) + 
+         geom_line(aes(x = x, y = predicted)) + # slope         
+         geom_point(data = LD_snow_df, aes(x = within_site_april_snow, y = mean_first_egg, color=site)) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "Within-site April snow-lying days", y = "First brood laying date (April days)", title = "") + 
+         theme_classic() +
+         labs(color = "Site") +
+         scale_color_manual(values=c("#4477AA", "#CCBB44", "#AA3377"),
+                            labels=c("Glen Clunie", "Glen Effock", "Rosedale"))
+)
+p1
+
+## March-April tmin
+pred.mm2 <- ggpredict(tminUK03_04.lmm1, terms = c("tminUK03_04"))  # this gives overall predictions for the model
+# plot the predictions 
+p2 <- (ggplot(pred.mm2) + 
+         geom_line(aes(x = x, y = predicted)) + # slope         
+         geom_point(data = RZ_ld_df, aes(x = tminUK03_04, y = mean_first_egg, color=site)) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "Within-site March-April minimum temperature °C", y = "", title = "") + 
+         theme_classic() +
+         labs(color = "Site") +
+         scale_color_manual(values=c("#4477AA", "#CCBB44", "#AA3377"),
+                            labels=c("Glen Clunie", "Glen Effock", "Rosedale"))
+)
+p2
+
+## combine plots
+LD_plot <- plot_grid(p1 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0.5,0,0), "cm")),
+                     p2 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0.5,0,0), "cm")),
+                     labels = c("(a)", "(b)"), label_size = 10,
+                     ncol=2,
+                     rel_widths = c(2,2))
+
+LD_plot
+
+# extract legend
+get_only_legend <- function(myggp) {
+  step1 <- ggplot_gtable(ggplot_build(myggp))
+  step2 <- which(sapply(step1$grobs, function(x) x$name) == "guide-box")
+  step3 <- step1$grobs[[step2]]
+  return(step3)
+}
+
+shared_legend <- get_legend(
+  p1 +
+    guides(color=guide_legend(nrow=1)) +
+    theme(legend.position = "bottom")
+)
+
+LD_plot2 <- plot_grid(LD_plot + theme(plot.margin=unit(c(0.3,0,0.4,0.2), "cm")),
+                      shared_legend, ncol=1, rel_heights = c(1, .07))
+LD_plot2
+
+########################################################################
+
+##### second step - model with all sig clim vars
+
+# make one dataframe with April snow and March-April tmin
+combined_df <- LD_snow_df %>% 
+  left_join(ld_tmin_df) %>%
+  select(site, year, mean_first_egg, tminUK03_04, within_site_april_snow)  
+  
+# lmm with April snow and March-April tmin
+combined.lmm1 <- lmer(mean_first_egg~scale(year)+tminUK03_04+within_site_april_snow+
+                       (1|year)+(1|site), data=combined_df)
+summary(combined.lmm1) 
+
+## plot snow effect
+
+## March-April tmin
+pred.mm <- ggpredict(combined.lmm1, terms = c("within_site_april_snow"))  # this gives overall predictions for the model
+# plot the predictions 
+(ggplot(pred.mm) + 
+         geom_line(aes(x = x, y = predicted)) + # slope         
+         geom_point(data = combined_df, aes(x = within_site_april_snow, y = mean_first_egg, color=site)) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "Within-site April snow-lying days", y = "Laying date (April days)", title = "") + 
+         theme_classic() +
+         labs(color = "Site") +
+         scale_color_manual(values=c("#4477AA", "#CCBB44", "#AA3377"),
+                            labels=c("Glen Clunie", "Glen Effock", "Rosedale")) +
+    theme(legend.position = "bottom")
+)
+
+# calculate difference in laying date across range of snow-lying days in the data
+x_max <- max(combined_df$within_site_april_snow) # extract highest value of x 
+x_min <- min(combined_df$within_site_april_snow) # extract lowest value of x
+m <- combined.lmm1@beta[4] # extract slope coefficient
+c <- combined.lmm1@beta[1] # extract intercept coefficient
+ld_max <- m*x_max + c # calculate response for max x
+ld_min <- m*x_min + c # calculate response for min x
+ld_max-ld_min # calculate difference in max and min response
+x_max-x_min # calculate difference in max and min x
+# calculate lowest laying date with lowest snow-lying days
+
 ###################################################################
 
 ############### spring NAO index ################
+
+RZ_NAO<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_NAO.xlsx")
+
+RZ_ld_df <- RZ_NAO %>% 
+    select(site, year, mean_first_egg, march_NAO, april_NAO, may_NAO, NAO_03_05) %>% 
+    na.omit(RZ_NAO) # remove all rows with NA
+
+##### March-May NAO (NAO_03_05)
+
+# LMM with year and site random effects
+NAO_03_05.lmm1 <- lmer(mean_first_egg~scale(year)+NAO_03_05+(1|year)+(1|site), data=RZ_ld_df)
+summary(NAO_03_05.lmm1) 
+# drop fixed effects
+NAO_03_05.lmm2 <- lmer(mean_first_egg~(1|site)+(1|year), data=RZ_ld_df)
+# compare models
+anova(NAO_03_05.lmm1, NAO_03_05.lmm2) # marginal effect of year+clim_var
+# compare model with just clim_var and TO to model without fixed effects
+NAO_03_05.lmm3 <- lmer(mean_first_egg~NAO_03_05+(1|site)+(1|year), data=RZ_ld_df)
+anova(NAO_03_05.lmm3, NAO_03_05.lmm2) # no effect of clim_var
+
+#############
+#### individual months
+
+### march_NAO
+# LMM with year and site random effects
+NAO_03.lmm1 <- lmer(mean_first_egg~scale(year)+march_NAO+(1|year)+(1|site), data=RZ_ld_df)
+summary(NAO_03.lmm1) 
+# drop fixed effects
+NAO_03.lmm2 <- lmer(mean_first_egg~(1|site)+(1|year), data=RZ_ld_df)
+# compare models
+anova(NAO_03.lmm1, NAO_03.lmm2) # no effect of year+clim_var
+# compare model with just clim_var and TO to model without fixed effects
+NAO_03.lmm3 <- lmer(mean_first_egg~march_NAO+(1|site)+(1|year), data=RZ_ld_df)
+anova(NAO_03.lmm3, NAO_03.lmm2) # no effect of clim_var
+
+### april_NAO
+# LMM with year and site random effects
+NAO_04.lmm1 <- lmer(mean_first_egg~scale(year)+april_NAO+(1|year)+(1|site), data=RZ_ld_df)
+summary(NAO_04.lmm1) 
+# drop fixed effects
+NAO_04.lmm2 <- lmer(mean_first_egg~(1|site)+(1|year), data=RZ_ld_df)
+# compare models
+anova(NAO_04.lmm1, NAO_04.lmm2) # effect of year+clim_var
+# compare model with just clim_var and TO to model without fixed effects
+NAO_04.lmm3 <- lmer(mean_first_egg~april_NAO+(1|site)+(1|year), data=RZ_ld_df)
+anova(NAO_04.lmm3, NAO_04.lmm2) # no effect of clim_var
+
+### may_NAO
+# LMM with year and site random effects
+NAO_05.lmm1 <- lmer(mean_first_egg~scale(year)+may_NAO+(1|year)+(1|site), data=RZ_ld_df)
+summary(NAO_05.lmm1) 
+# drop fixed effects
+NAO_05.lmm2 <- lmer(mean_first_egg~(1|site)+(1|year), data=RZ_ld_df)
+# compare models
+anova(NAO_05.lmm1, NAO_05.lmm2) # effect of year+clim_var
+# compare model with just clim_var and TO to model without fixed effects
+NAO_05.lmm3 <- lmer(mean_first_egg~may_NAO+(1|site)+(1|year), data=RZ_ld_df)
+anova(NAO_05.lmm3, NAO_05.lmm2) # no effect of clim_var
+
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_pptUK07_08.lmm1)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(lag1_pptUK07_08.lmm1, type = "diag") # random effect QQ-plot
+## assumptions satisfied

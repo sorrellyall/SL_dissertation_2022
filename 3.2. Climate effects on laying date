@@ -1,0 +1,92 @@
+## load packages
+library("readxl")
+library(dplyr)
+library(lme4)
+library(lmerTest)
+library(ggeffects) # to plot glmm effects
+library(ggplot2)
+library(tidyverse) 
+library(DHARMa) # to diagnose glmms
+library(sjPlot)
+library(sjmisc)
+library(glmmTMB)
+library(TMB)
+
+###################################################################
+
+############### Atlas climate variables ################
+
+# RZ_AT_climate<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/RZ_ATclimate.xlsx")
+RZ_AT_climate<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_ATclimate.xlsx")
+
+##### All AT clim vars and double brooding rate
+## dataframe manipulation
+RZ_ld_df <- RZ_AT_climate %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
+        select(site, year, mean_first_egg, lag1_pptAT03_05, lag2_pptAT03_05, lag1_pptAT11_02, lag1_tminAT11_02, lag1_tmaxAT11_02) %>% # select only the columns site, year and dbr
+        na.omit(RZ_AT_climate) # remove all rows with NA
+
+## histogram of territory_occupancy data
+hist(RZ_ld_df$mean_first_egg) 
+# data fits normal (Gaussian) distribution
+
+## LMM structure
+# y = territory_occupancy
+# fixed effects = year + clim_var
+# random effects = site
+# only test for interaction between site and clim_var if the clim_var effect is significant
+
+#########################################
+
+### March-May precipitation the year before breeding (lag1_pptAT03_05) LMM
+
+# LMM with year and site random effects
+lag1_pptAT03_05.lmm1 <- lmer(mean_first_egg~scale(year)+lag1_pptAT03_05+(1|year)+(1|site), data=RZ_ld_df)
+summary(lag1_pptAT03_05.lmm1) 
+
+### March-May precipitation two years before breeding (lag2_pptAT03_05) LMM
+
+# LMM with year and site random effects
+lag2_pptAT03_05.lmm1 <- lmer(mean_first_egg~scale(year)+lag2_pptAT03_05+(1|year)+(1|site), data=RZ_ld_df)
+summary(lag2_pptAT03_05.lmm1) 
+
+### November-February precipitation the year before breeding (lag1_pptAT11_02) LMM
+
+# LMM with year and site random effects
+lag1_pptAT11_02.lmm1 <- lmer(mean_first_egg~scale(year)+lag1_pptAT11_02+(1|year)+(1|site), data=RZ_ld_df)
+summary(lag1_pptAT11_02.lmm1) 
+
+### November-February minimum temperature the year before breeding (lag1_tminAT11_02) LMM
+
+# LMM with year and site random effects
+lag1_tminAT11_02.lmm1 <- lmer(mean_first_egg~scale(year)+lag1_tminAT11_02+(1|year)+(1|site), data=RZ_ld_df)
+summary(lag1_tminAT11_02.lmm1) 
+
+### November-February minimum temperature the year before breeding (lag1_tmaxAT11_02) LMM
+
+# LMM with year and site random effects
+lag1_tmaxAT11_02.lmm1 <- lmer(mean_first_egg~scale(year)+lag1_tmaxAT11_02+(1|year)+(1|site), data=RZ_ld_df)
+summary(lag1_tmaxAT11_02.lmm1) 
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_tmaxAT11_02.lmm3)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+# problem? KS/uniformity test p=0.0002121
+# problem? combined adjusted quantile test (from residuals vs. predicted plot) p<0.05
+## using sjPlot package
+plot_model(lag1_tmaxAT11_02.lmm3, type = "diag") # random effect QQ-plot
+
+###################################################################
+
+############### Atlas climate variables ################
+
+###################################################################
+
+############### UK climate variables ################
+
+###################################################################
+
+############### spring NAO index ################

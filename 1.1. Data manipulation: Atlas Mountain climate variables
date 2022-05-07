@@ -1,10 +1,8 @@
 rm(list=ls())
 
-##### Atlas climate variables #####
-
 ### in this code:
-# creating lagged Atlas climate variables 
-# creating one dataframe with all ring ouzel responses and Atlas climate variables 
+# creating lagged  climate variables 
+# creating one dataframe per climate variable group with all ring ouzel responses and climate variables 
 
 ## load packages
 library(dplyr) # data manipulation
@@ -12,6 +10,10 @@ library(tidyr) # data manipulation
 library("readxl") # open excel sheets
 
 #########################################################
+
+##### Atlas climate variables #####
+
+###########
 
 ### March-May precipitation (lag1 and lag2)
 # pptAT03_05<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptAT03_05.xlsx")
@@ -109,3 +111,2505 @@ RZ_ATclimate <- breeding_sites %>%
          lag1_pptAT03_05, lag2_pptAT03_05, lag1_pptAT11_02, lag1_tminAT11_02, lag1_tmaxAT11_02)
 # export to excel
 write_xlsx(RZ_ATclimate, "~/Dropbox/1. DISS/Sorrel/data/RZ_ATclimate.xlsx")
+
+##############################################
+
+##### UK climate variables #####
+
+###########
+
+##### Precipitation
+
+## aggregate each set of two months to create each climate variable
+# pptGC03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptGC03_08.xlsx")
+pptGC03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/pptGC03_08.xlsx")
+# pptGEF03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptGEF03_08.xlsx")
+pptGEF03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/pptGEF03_08.xlsx")
+# pptGE03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptGE03_08.xlsx")
+pptGE03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/pptGE03_08.xlsx")
+# pptHW03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptHW03_08.xlsx")
+pptHW03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/pptHW03_08.xlsx")
+# pptLM03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptLM03_08.xlsx")
+pptLM03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/pptLM03_08.xlsx")
+# pptRD03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptRD03_08.xlsx")
+pptRD03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/pptRD03_08.xlsx")
+
+
+### March-April Precipitation
+
+## Glen Clunie March-April ppt
+# separate StdTime variable into year, month and day
+pptGC03_08.df <- separate(pptGC03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+pptGC03.df <- subset(pptGC03_08.df, month == "03") # select March rows only
+pptGC03.df2 <- pptGC03.df %>%
+  select(year, MEAN)
+colnames(pptGC03.df2) <- c("year", "pptGC03")
+# April ppt
+pptGC04.df <- subset(pptGC03_08.df, month == "04") # select April rows only
+pptGC04.df2 <- pptGC04.df %>%
+  select(year, MEAN)
+colnames(pptGC04.df2) <- c("year", "pptGC04")
+# join March and April dfs
+pptGC03_04.df <- pptGC03.df2 %>%
+  group_by(year) %>%
+  left_join(pptGC04.df2)
+# mean March and April ppt
+pptGC03_04.df2 <- pptGC03_04.df %>%
+  rowwise() %>%
+  mutate(pptUK03_04 = mean(c(pptGC03,pptGC04))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, pptUK03_04)
+
+## Glen Effock march-april ppt
+# separate StdTime variable into year, month and day
+pptGEF03_08.df <- separate(pptGEF03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+pptGEF03.df <- subset(pptGEF03_08.df, month == "03") # select March rows only
+pptGEF03.df2 <- pptGEF03.df %>%
+  select(year, MEAN)
+colnames(pptGEF03.df2) <- c("year", "pptGEF03")
+# April ppt
+pptGEF04.df <- subset(pptGEF03_08.df, month == "04") # select April rows only
+pptGEF04.df2 <- pptGEF04.df %>%
+  select(year, MEAN)
+colnames(pptGEF04.df2) <- c("year", "pptGEF04")
+# join March and April dfs
+pptGEF03_04.df <- pptGEF03.df2 %>%
+  group_by(year) %>%
+  left_join(pptGEF04.df2)
+# mean March and April ppt
+pptGEF03_04.df2 <- pptGEF03_04.df %>%
+  rowwise() %>%
+  mutate(pptUK03_04 = mean(c(pptGEF03,pptGEF04))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, pptUK03_04)
+
+## Glen Esk spring (march-april) ppt
+# separate StdTime variable into year, month and day
+pptGE03_08.df <- separate(pptGE03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+pptGE03.df <- subset(pptGE03_08.df, month == "03") # select March rows only
+pptGE03.df2 <- pptGE03.df %>%
+  select(year, MEAN)
+colnames(pptGE03.df2) <- c("year", "pptGE03")
+# April ppt
+pptGE04.df <- subset(pptGE03_08.df, month == "04") # select April rows only
+pptGE04.df2 <- pptGE04.df %>%
+  select(year, MEAN)
+colnames(pptGE04.df2) <- c("year", "pptGE04")
+# join March and April dfs
+pptGE03_04.df <- pptGE03.df2 %>%
+  group_by(year) %>%
+  left_join(pptGE04.df2)
+# mean March and April ppt
+pptGE03_04.df2 <- pptGE03_04.df %>%
+  rowwise() %>%
+  mutate(pptUK03_04 = mean(c(pptGE03,pptGE04))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, pptUK03_04)
+
+## Haweswater spring (march-april) ppt
+# separate StdTime variable into year, month and day
+pptHW03_08.df <- separate(pptHW03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+pptHW03.df <- subset(pptHW03_08.df, month == "03") # select March rows only
+pptHW03.df2 <- pptHW03.df %>%
+  select(year, MEAN)
+colnames(pptHW03.df2) <- c("year", "pptHW03")
+# April ppt
+pptHW04.df <- subset(pptHW03_08.df, month == "04") # select April rows only
+pptHW04.df2 <- pptHW04.df %>%
+  select(year, MEAN)
+colnames(pptHW04.df2) <- c("year", "pptHW04")
+# join March and April dfs
+pptHW03_04.df <- pptHW03.df2 %>%
+  group_by(year) %>%
+  left_join(pptHW04.df2)
+# mean March and April ppt
+pptHW03_04.df2 <- pptHW03_04.df %>%
+  rowwise() %>%
+  mutate(pptUK03_04 = mean(c(pptHW03,pptHW04))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, pptUK03_04)
+
+## Long Mynd march-april ppt
+# separate StdTime variable into year, month and day
+pptLM03_08.df <- separate(pptLM03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+pptLM03.df <- subset(pptLM03_08.df, month == "03") # select March rows only
+pptLM03.df2 <- pptLM03.df %>%
+  select(year, MEAN)
+colnames(pptLM03.df2) <- c("year", "pptLM03")
+# April ppt
+pptLM04.df <- subset(pptLM03_08.df, month == "04") # select April rows only
+pptLM04.df2 <- pptLM04.df %>%
+  select(year, MEAN)
+colnames(pptLM04.df2) <- c("year", "pptLM04")
+# join March and April dfs
+pptLM03_04.df <- pptLM03.df2 %>%
+  group_by(year) %>%
+  left_join(pptLM04.df2)
+# mean March and April ppt
+pptLM03_04.df2 <- pptLM03_04.df %>%
+  rowwise() %>%
+  mutate(pptUK03_04 = mean(c(pptLM03,pptLM04))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, pptUK03_04)
+
+## Rosedale spring (march-april) ppt
+# separate StdTime variable into year, month and day
+pptRD03_08.df <- separate(pptRD03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+pptRD03.df <- subset(pptRD03_08.df, month == "03") # select March rows only
+pptRD03.df2 <- pptRD03.df %>%
+  select(year, MEAN)
+colnames(pptRD03.df2) <- c("year", "pptRD03")
+# April ppt
+pptRD04.df <- subset(pptRD03_08.df, month == "04") # select April rows only
+pptRD04.df2 <- pptRD04.df %>%
+  select(year, MEAN)
+colnames(pptRD04.df2) <- c("year", "pptRD04")
+# join March and April dfs
+pptRD03_04.df <- pptRD03.df2 %>%
+  group_by(year) %>%
+  left_join(pptRD04.df2)
+# mean March and April ppt
+pptRD03_04.df2 <- pptRD03_04.df %>%
+  rowwise() %>%
+  mutate(pptUK03_04 = mean(c(pptRD03,pptRD04))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, pptUK03_04)
+
+### put all sites into one dataframe
+UK_ppt03_04.df <- rbind(pptGC03_04.df2, pptGEF03_04.df2, pptGE03_04.df2, pptHW03_04.df2, pptLM03_04.df2, pptRD03_04.df2)
+UK_ppt03_04.df$year <- as.numeric(UK_ppt03_04.df$year)
+pptGC03_04.df2$year <- as.numeric(pptGC03_04.df2$year)
+pptGEF03_04.df2$year <- as.numeric(pptGEF03_04.df2$year)
+pptGE03_04.df2$year <- as.numeric(pptGE03_04.df2$year)
+pptHW03_04.df2$year <- as.numeric(pptHW03_04.df2$year)
+pptLM03_04.df2$year <- as.numeric(pptLM03_04.df2$year)
+pptRD03_04.df2$year <- as.numeric(pptRD03_04.df2$year)
+
+###########
+
+### May-June Precipitation
+
+## Glen Clunie May-June ppt
+# May ppt
+pptGC05.df <- subset(pptGC03_08.df, month == "05") # select March rows only
+pptGC05.df2 <- pptGC05.df %>%
+  select(year, MEAN)
+colnames(pptGC05.df2) <- c("year", "pptGC05")
+# June ppt
+pptGC06.df <- subset(pptGC03_08.df, month == "06") # select April rows only
+pptGC06.df2 <- pptGC06.df %>%
+  select(year, MEAN)
+colnames(pptGC06.df2) <- c("year", "pptGC06")
+# join March and April dfs
+pptGC05_06.df <- pptGC05.df2 %>%
+  group_by(year) %>%
+  left_join(pptGC06.df2)
+# mean March and April ppt
+pptGC05_06.df2 <- pptGC05_06.df %>%
+  rowwise() %>%
+  mutate(pptUK05_06 = mean(c(pptGC05,pptGC06))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, pptUK05_06)
+
+## Glen Effock May-June ppt
+# May ppt
+pptGEF05.df <- subset(pptGEF03_08.df, month == "05") # select March rows only
+pptGEF05.df2 <- pptGEF05.df %>%
+  select(year, MEAN)
+colnames(pptGEF05.df2) <- c("year", "pptGEF05")
+# June ppt
+pptGEF06.df <- subset(pptGEF03_08.df, month == "06") # select April rows only
+pptGEF06.df2 <- pptGEF06.df %>%
+  select(year, MEAN)
+colnames(pptGEF06.df2) <- c("year", "pptGEF06")
+# join March and April dfs
+pptGEF05_06.df <- pptGEF05.df2 %>%
+  group_by(year) %>%
+  left_join(pptGEF06.df2)
+# mean March and April ppt
+pptGEF05_06.df2 <- pptGEF05_06.df %>%
+  rowwise() %>%
+  mutate(pptUK05_06 = mean(c(pptGEF05,pptGEF06))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, pptUK05_06)
+
+## Glen Esk May-June ppt
+# May ppt
+pptGE05.df <- subset(pptGE03_08.df, month == "05") # select March rows only
+pptGE05.df2 <- pptGE05.df %>%
+  select(year, MEAN)
+colnames(pptGE05.df2) <- c("year", "pptGE05")
+# June ppt
+pptGE06.df <- subset(pptGE03_08.df, month == "06") # select April rows only
+pptGE06.df2 <- pptGE06.df %>%
+  select(year, MEAN)
+colnames(pptGE06.df2) <- c("year", "pptGE06")
+# join March and April dfs
+pptGE05_06.df <- pptGE05.df2 %>%
+  group_by(year) %>%
+  left_join(pptGE06.df2)
+# mean March and April ppt
+pptGE05_06.df2 <- pptGE05_06.df %>%
+  rowwise() %>%
+  mutate(pptUK05_06 = mean(c(pptGE05,pptGE06))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, pptUK05_06)
+
+## Haweswater May-June ppt
+# May ppt
+pptHW05.df <- subset(pptHW03_08.df, month == "05") # select March rows only
+pptHW05.df2 <- pptHW05.df %>%
+  select(year, MEAN)
+colnames(pptHW05.df2) <- c("year", "pptHW05")
+# June ppt
+pptHW06.df <- subset(pptHW03_08.df, month == "06") # select April rows only
+pptHW06.df2 <- pptHW06.df %>%
+  select(year, MEAN)
+colnames(pptHW06.df2) <- c("year", "pptHW06")
+# join March and April dfs
+pptHW05_06.df <- pptHW05.df2 %>%
+  group_by(year) %>%
+  left_join(pptHW06.df2)
+# mean March and April ppt
+pptHW05_06.df2 <- pptHW05_06.df %>%
+  rowwise() %>%
+  mutate(pptUK05_06 = mean(c(pptHW05,pptHW06))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, pptUK05_06)
+
+## Long Mynd May-June ppt
+# May ppt
+pptLM05.df <- subset(pptLM03_08.df, month == "05") # select March rows only
+pptLM05.df2 <- pptHW05.df %>%
+  select(year, MEAN)
+colnames(pptLM05.df2) <- c("year", "pptLM05")
+# June ppt
+pptLM06.df <- subset(pptLM03_08.df, month == "06") # select April rows only
+pptLM06.df2 <- pptLM06.df %>%
+  select(year, MEAN)
+colnames(pptLM06.df2) <- c("year", "pptLM06")
+# join March and April dfs
+pptLM05_06.df <- pptLM05.df2 %>%
+  group_by(year) %>%
+  left_join(pptLM06.df2)
+# mean March and April ppt
+pptLM05_06.df2 <- pptLM05_06.df %>%
+  rowwise() %>%
+  mutate(pptUK05_06 = mean(c(pptLM05,pptLM06))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, pptUK05_06)
+
+## Rosedale May-June ppt
+# May ppt
+pptRD05.df <- subset(pptRD03_08.df, month == "05") # select March rows only
+pptRD05.df2 <- pptRD05.df %>%
+  select(year, MEAN)
+colnames(pptRD05.df2) <- c("year", "pptRD05")
+# June ppt
+pptRD06.df <- subset(pptRD03_08.df, month == "06") # select April rows only
+pptRD06.df2 <- pptRD06.df %>%
+  select(year, MEAN)
+colnames(pptRD06.df2) <- c("year", "pptRD06")
+# join March and April dfs
+pptRD05_06.df <- pptRD05.df2 %>%
+  group_by(year) %>%
+  left_join(pptRD06.df2)
+# mean March and April ppt
+pptRD05_06.df2 <- pptRD05_06.df %>%
+  rowwise() %>%
+  mutate(pptUK05_06 = mean(c(pptRD05,pptRD06))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, pptUK05_06)
+
+### put all sites into one dataframe
+UK_ppt05_06.df <- rbind(pptGC05_06.df2, pptGEF05_06.df2, pptGE05_06.df2, pptHW05_06.df2, pptLM05_06.df2, pptRD05_06.df2)
+UK_ppt05_06.df$year <- as.numeric(UK_ppt05_06.df$year)
+
+pptGC05_06.df2$year <- as.numeric(pptGC05_06.df2$year)
+pptGEF05_06.df2$year <- as.numeric(pptGEF05_06.df2$year)
+pptGE05_06.df2$year <- as.numeric(pptGE05_06.df2$year)
+pptHW05_06.df2$year <- as.numeric(pptHW05_06.df2$year)
+pptLM05_06.df2$year <- as.numeric(pptLM05_06.df2$year)
+pptRD05_06.df2$year <- as.numeric(pptRD05_06.df2$year)
+
+
+###########
+
+### July-August Precipitation
+
+## Glen Clunie July-August ppt
+# May ppt
+pptGC07.df <- subset(pptGC03_08.df, month == "07") # select March rows only
+pptGC07.df2 <- pptGC07.df %>%
+  select(year, MEAN)
+colnames(pptGC07.df2) <- c("year", "pptGC07")
+# June ppt
+pptGC08.df <- subset(pptGC03_08.df, month == "08") # select April rows only
+pptGC08.df2 <- pptGC08.df %>%
+  select(year, MEAN)
+colnames(pptGC08.df2) <- c("year", "pptGC08")
+# join March and April dfs
+pptGC07_08.df <- pptGC07.df2 %>%
+  group_by(year) %>%
+  left_join(pptGC08.df2)
+# mean March and April ppt
+pptGC07_08.df2 <- pptGC07_08.df %>%
+  rowwise() %>%
+  mutate(pptUK07_08 = mean(c(pptGC07,pptGC08))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, pptUK07_08)
+# create new column with lagged climate variables
+pptGC07_08.df2$year <- as.numeric(pptGC07_08.df2$year) # convert year from character to numeric variable
+lag_pptGC07_08.df <- pptGC07_08.df2 # create new dataframe and lag the year variable
+lag_pptGC07_08.df$year <- pptGC07_08.df2$year+1
+colnames(lag_pptGC07_08.df) <- c("site", "year", "lag1_pptUK07_08") # change column names
+
+## Glen Effock July-August ppt
+# May ppt
+pptGEF07.df <- subset(pptGEF03_08.df, month == "07") # select March rows only
+pptGEF07.df2 <- pptGEF07.df %>%
+  select(year, MEAN)
+colnames(pptGEF07.df2) <- c("year", "pptGEF07")
+# June ppt
+pptGEF08.df <- subset(pptGEF03_08.df, month == "08") # select April rows only
+pptGEF08.df2 <- pptGEF08.df %>%
+  select(year, MEAN)
+colnames(pptGEF08.df2) <- c("year", "pptGEF08")
+# join March and April dfs
+pptGEF07_08.df <- pptGEF07.df2 %>%
+  group_by(year) %>%
+  left_join(pptGEF08.df2)
+# mean March and April ppt
+pptGEF07_08.df2 <- pptGEF07_08.df %>%
+  rowwise() %>%
+  mutate(pptUK07_08 = mean(c(pptGEF07,pptGEF08))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, pptUK07_08)
+# create new column with lagged climate variables
+pptGEF07_08.df2$year <- as.numeric(pptGEF07_08.df2$year) # convert year from character to numeric variable
+lag_pptGEF07_08.df <- pptGEF07_08.df2 # create new dataframe and lag the year variable
+lag_pptGEF07_08.df$year <- pptGEF07_08.df2$year+1
+colnames(lag_pptGEF07_08.df) <- c("site", "year", "lag1_pptUK07_08") # change column names
+
+## Glen Esk July-August ppt
+# May ppt
+pptGE07.df <- subset(pptGE03_08.df, month == "07") # select March rows only
+pptGE07.df2 <- pptGE07.df %>%
+  select(year, MEAN)
+colnames(pptGE07.df2) <- c("year", "pptGE07")
+# June ppt
+pptGE08.df <- subset(pptGE03_08.df, month == "08") # select April rows only
+pptGE08.df2 <- pptGE08.df %>%
+  select(year, MEAN)
+colnames(pptGE08.df2) <- c("year", "pptGE08")
+# join March and April dfs
+pptGE07_08.df <- pptGE07.df2 %>%
+  group_by(year) %>%
+  left_join(pptGE08.df2)
+# mean March and April ppt
+pptGE07_08.df2 <- pptGE07_08.df %>%
+  rowwise() %>%
+  mutate(pptUK07_08 = mean(c(pptGE07,pptGE08))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, pptUK07_08)
+# create new column with lagged climate variables
+pptGE07_08.df2$year <- as.numeric(pptGE07_08.df2$year) # convert year from character to numeric variable
+lag_pptGE07_08.df <- pptGE07_08.df2 # create new dataframe and lag the year variable
+lag_pptGE07_08.df$year <- pptGE07_08.df2$year+1
+colnames(lag_pptGE07_08.df) <- c("site", "year", "lag1_pptUK07_08") # change column names
+
+## Haweswater July-August ppt
+# May ppt
+pptHW07.df <- subset(pptHW03_08.df, month == "07") # select March rows only
+pptHW07.df2 <- pptHW07.df %>%
+  select(year, MEAN)
+colnames(pptHW07.df2) <- c("year", "pptHW07")
+# June ppt
+pptHW08.df <- subset(pptHW03_08.df, month == "08") # select April rows only
+pptHW08.df2 <- pptHW08.df %>%
+  select(year, MEAN)
+colnames(pptHW08.df2) <- c("year", "pptHW08")
+# join March and April dfs
+pptHW07_08.df <- pptHW07.df2 %>%
+  group_by(year) %>%
+  left_join(pptHW08.df2)
+# mean March and April ppt
+pptHW07_08.df2 <- pptHW07_08.df %>%
+  rowwise() %>%
+  mutate(pptUK07_08 = mean(c(pptHW07,pptHW08))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, pptUK07_08)
+# create new column with lagged climate variables
+pptHW07_08.df2$year <- as.numeric(pptHW07_08.df2$year) # convert year from character to numeric variable
+lag_pptHW07_08.df <- pptHW07_08.df2 # create new dataframe and lag the year variable
+lag_pptHW07_08.df$year <- pptHW07_08.df2$year+1
+colnames(lag_pptHW07_08.df) <- c("site", "year", "lag1_pptUK07_08") # change column names
+
+## Long Mynd July-August ppt
+# May ppt
+pptLM07.df <- subset(pptLM03_08.df, month == "07") # select March rows only
+pptLM07.df2 <- pptLM07.df %>%
+  select(year, MEAN)
+colnames(pptLM07.df2) <- c("year", "pptLM07")
+# June ppt
+pptLM08.df <- subset(pptLM03_08.df, month == "08") # select April rows only
+pptLM08.df2 <- pptLM08.df %>%
+  select(year, MEAN)
+colnames(pptLM08.df2) <- c("year", "pptLM08")
+# join March and April dfs
+pptLM07_08.df <- pptLM07.df2 %>%
+  group_by(year) %>%
+  left_join(pptLM08.df2)
+# mean March and April ppt
+pptLM07_08.df2 <- pptLM07_08.df %>%
+  rowwise() %>%
+  mutate(pptUK07_08 = mean(c(pptLM07,pptLM08))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, pptUK07_08)
+# create new column with lagged climate variables
+pptLM07_08.df2$year <- as.numeric(pptLM07_08.df2$year) # convert year from character to numeric variable
+lag_pptLM07_08.df <- pptLM07_08.df2 # create new dataframe and lag the year variable
+lag_pptLM07_08.df$year <- pptLM07_08.df2$year+1
+colnames(lag_pptLM07_08.df) <- c("site", "year", "lag1_pptUK07_08") # change column names
+
+## Rosedale July-August ppt
+# May ppt
+pptRD07.df <- subset(pptRD03_08.df, month == "07") # select March rows only
+pptRD07.df2 <- pptRD07.df %>%
+  select(year, MEAN)
+colnames(pptRD07.df2) <- c("year", "pptRD07")
+# June ppt
+pptRD08.df <- subset(pptRD03_08.df, month == "08") # select April rows only
+pptRD08.df2 <- pptRD08.df %>%
+  select(year, MEAN)
+colnames(pptRD08.df2) <- c("year", "pptRD08")
+# join March and April dfs
+pptRD07_08.df <- pptRD07.df2 %>%
+  group_by(year) %>%
+  left_join(pptRD08.df2)
+# mean March and April ppt
+pptRD07_08.df2 <- pptRD07_08.df %>%
+  rowwise() %>%
+  mutate(pptUK07_08 = mean(c(pptRD07,pptRD08))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, pptUK07_08)
+# create new column with lagged climate variables
+pptRD07_08.df2$year <- as.numeric(pptRD07_08.df2$year) # convert year from character to numeric variable
+lag_pptRD07_08.df <- pptRD07_08.df2 # create new dataframe and lag the year variable
+lag_pptRD07_08.df$year <- pptRD07_08.df2$year+1
+colnames(lag_pptRD07_08.df) <- c("site", "year", "lag1_pptUK07_08") # change column names
+
+### put all sites into one dataframe
+UK_lag_ppt07_08.df <- rbind(lag_pptGC07_08.df, lag_pptGEF07_08.df, lag_pptGE07_08.df, lag_pptHW07_08.df, lag_pptLM07_08.df, lag_pptRD07_08.df)
+
+
+#### join all ppt dfs and calculate within-site ppt
+
+UK_ppt <- cbind(UK_ppt03_04.df, UK_ppt05_06.df, UK_lag_ppt07_08.df)
+colnames(UK_ppt) <- c("site", "year", "pptUK03_04", "site1", "year1", "pptUK05_06", "site2", "year2", "lag1_pptUK07_08") # change column names
+UK_ppt2 <- UK_ppt %>%
+  select(site, year, pptUK03_04, pptUK05_06, lag1_pptUK07_08)
+
+UK_ppt3 <- UK_ppt2 %>%
+  group_by(site) %>%
+  mutate(between_site_pptUK03_04=mean(pptUK03_04)) %>%
+  mutate(within_site_pptUK03_04=pptUK03_04-between_site_pptUK03_04) %>%
+  mutate(between_site_pptUK05_06=mean(pptUK05_06)) %>%
+  mutate(within_site_pptUK05_06=pptUK05_06-between_site_pptUK05_06) %>%
+  mutate(between_site_lag1_pptUK07_08=mean(lag1_pptUK07_08)) %>%
+  mutate(within_site_lag1_pptUK07_08=lag1_pptUK07_08-between_site_lag1_pptUK07_08) %>%
+  select(site, year, within_site_pptUK03_04, within_site_pptUK05_06, within_site_lag1_pptUK07_08)
+colnames(UK_ppt3) <- c("site", "year", "pptUK03_04", "pptUK05_06", "lag1_pptUK07_08") # change column names
+
+
+##### join UK_ppt to breeding sites data
+# breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx")
+breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
+## join
+# UK_ppt03_04.df
+# UK_ppt05_06.df
+# UK_lag_ppt07_08.df
+
+# split breeding sites df into each site
+# left_join each site's UK climate variable
+# join dfs at the bottom using rbind
+
+# GC
+GC_RZ <- subset(breeding_sites, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_ppt <- subset(UK_ppt3, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_RZ_ppt <- GC_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GC_ppt, by="year") 
+# GEF
+GEF_RZ <- subset(breeding_sites, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_ppt <- subset(UK_ppt3, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_RZ_ppt <- GEF_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GEF_ppt, by="year") 
+# GE
+GE_RZ <- subset(breeding_sites, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_ppt <- subset(UK_ppt3, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_RZ_ppt <- GE_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GE_ppt, by="year") 
+# HW
+HW_RZ <- subset(breeding_sites, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_ppt <- subset(UK_ppt3, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_RZ_ppt <- HW_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(HW_ppt, by="year") 
+# LM
+LM_RZ <- subset(breeding_sites, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_ppt <- subset(UK_ppt3, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_RZ_ppt <- LM_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(LM_ppt, by="year") 
+# RD
+RD_RZ <- subset(breeding_sites, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_ppt <- subset(UK_ppt3, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_RZ_ppt <- RD_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(RD_ppt, by="year") 
+
+# join all sites together
+RZ_UK_ppt2 <- rbind(GC_RZ_ppt, GEF_RZ_ppt, GE_RZ_ppt, HW_RZ_ppt, LM_RZ_ppt, RD_RZ_ppt)
+RZ_UK_ppt2 <- RZ_UK_ppt2 %>%
+  select(site.x, year, territory_occupancy, early_nests, second_broods, mean_first_egg, 
+                  earliest_first_egg, mean_first_egg_late, Mayfield_ns_early, Mayfield_ns_late, nests_monitored, successful_nests,
+                  pptUK03_04, pptUK05_06, lag1_pptUK07_08)
+colnames(RZ_UK_ppt2) <- c("site", "year", "territory_occupancy", "early_nests", "second_broods", 
+                                                 "mean_first_egg", "earliest_first_egg", "mean_first_egg_late", "Mayfield_ns_early",
+                                                "Mayfield_ns_late", "nests_monitored", "successful_nests", 
+                                                "pptUK03_04", "pptUK05_06", "lag1_pptUK07_08") 
+# export to excel
+write_xlsx(RZ_UK_ppt2, "~/Dropbox/1. DISS/Sorrel/data/RZ_UK_ppt2.xlsx")
+
+
+##############################################
+
+### March-April snow lying days (days each month with more than 50% of the ground covered in snow at 9 am)
+
+# snowGC03_04<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/snow_GC.xlsx")
+snowGC03_04<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/snow_GC.xlsx")
+# snowGEF03_04<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/snow_GEF.xlsx")
+snowGEF03_04<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/snow_GEF.xlsx")
+# snowGE03_04<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/snow_GE.xlsx")
+snowGE03_04<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/snow_GE.xlsx")
+# snowHW03_04<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/snow_HW.xlsx")
+snowHW03_04<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/snow_HW.xlsx")
+# snowLM03_04<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/snow_LM.xlsx")
+snowLM03_04<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/snow_LM.xlsx")
+# snowRD03_04<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/snow_RD.xlsx")
+snowRD03_04<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/snow_RD.xlsx")
+
+## dataframe manipulation for March snow
+# Glen Clunie
+snowGC03_04 <- separate(snowGC03_04, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+snowGC03_04$year <- as.numeric(snowGC03_04$year) # convert year from character to numeric variable
+snowGC03.df <- subset(snowGC03_04, month == "03") # select March rows only
+snowGC03.df2 <- snowGC03.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowGC03.df2$site <- "glen_clunie" # add column for site
+# Glen Effock
+snowGEF03_04 <- separate(snowGEF03_04, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+snowGEF03_04$year <- as.numeric(snowGEF03_04$year) # convert year from character to numeric variable
+snowGEF03.df <- subset(snowGEF03_04, month == "03") # select March rows only
+snowGEF03.df2 <- snowGEF03.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowGEF03.df2$site <- "glen_effock" # add column for site
+# Glen Esk
+snowGE03_04 <- separate(snowGE03_04, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+snowGE03_04$year <- as.numeric(snowGE03_04$year) # convert year from character to numeric variable
+snowGE03.df <- subset(snowGE03_04, month == "03") # select March rows only
+snowGE03.df2 <- snowGE03.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowGE03.df2$site <- "glen_esk" # add column for site
+# Haweswater
+snowHW03_04 <- separate(snowHW03_04, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+snowHW03_04$year <- as.numeric(snowHW03_04$year) # convert year from character to numeric variable
+snowHW03.df <- subset(snowHW03_04, month == "03") # select March rows only
+snowHW03.df2 <- snowHW03.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowHW03.df2$site <- "haweswater" # add column for site
+# Long Mynd
+snowLM03_04 <- separate(snowLM03_04, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+snowLM03_04$year <- as.numeric(snowLM03_04$year) # convert year from character to numeric variable
+snowLM03.df <- subset(snowLM03_04, month == "03") # select March rows only
+snowLM03.df2 <- snowLM03.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowLM03.df2$site <- "long_mynd" # add column for site
+# Rosedale
+snowRD03_04 <- separate(snowRD03_04, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+snowRD03_04$year <- as.numeric(snowRD03_04$year) # convert year from character to numeric variable
+snowRD03.df <- subset(snowRD03_04, month == "03") # select March rows only
+snowRD03.df2 <- snowRD03.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowRD03.df2$site <- "rosedale" # add column for site
+
+## dataframe manipulation for April snow
+# Glen Clunie
+snowGC04.df <- subset(snowGC03_04, month == "04") # select April rows only
+snowGC04.df2 <- snowGC04.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowGC04.df2$site <- "glen_clunie" # add column for site
+# Glen Effock
+snowGEF04.df <- subset(snowGEF03_04, month == "04") # select April rows only
+snowGEF04.df2 <- snowGEF04.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowGEF04.df2$site <- "glen_effock" # add column for site
+# Glen Esk
+snowGE04.df <- subset(snowGE03_04, month == "04") # select April rows only
+snowGE04.df2 <- snowGE04.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowGE04.df2$site <- "glen_esk" # add column for site
+# Haweswater
+snowHW04.df <- subset(snowHW03_04, month == "04") # select April rows only
+snowHW04.df2 <- snowHW04.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowHW04.df2$site <- "haweswater" # add column for site
+# Long Mynd
+snowLM04.df <- subset(snowLM03_04, month == "04") # select April rows only
+snowLM04.df2 <- snowLM04.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowLM04.df2$site <- "long_mynd" # add column for site
+# Rosedale
+snowRD04.df <- subset(snowRD03_04, month == "04") # select April rows only
+snowRD04.df2 <- snowRD04.df %>%
+  select(year, MEAN) # select only columns year and MEAN
+snowRD04.df2$site <- "rosedale" # add column for site
+
+
+####################
+# create 2 dataframes with each site, year, march snow and april snow
+March_snow <- rbind(snowGC03.df2, snowGEF03.df2, snowGE03.df2, snowHW03.df2, snowLM03.df2, snowRD03.df2)
+colnames(March_snow) <- c("year", "march_snow", "site")
+April_snow <- rbind(snowGC04.df2, snowGEF04.df2, snowGE04.df2, snowHW04.df2, snowLM04.df2, snowRD04.df2)
+colnames(April_snow) <- c("year", "april_snow", "site")
+
+# merge March_snow and April_snow and calculate mean for each year at each site
+snowUK03_04.df <- cbind(March_snow, April_snow)
+colnames(snowUK03_04.df) <- c("year", "march_snow", "site", "year1", "april_snow", "site1")
+snowUK03_04.df2 <- snowUK03_04.df %>%
+  rowwise() %>%
+  mutate(snowUK03_04 = mean(c(march_snow,april_snow))) %>%
+  select(site, year, march_snow, april_snow, snowUK03_04)
+#################
+# export to excel
+write_xlsx(snowUK03_04.df2, "~/Dropbox/1. DISS/Sorrel/data/UK_snow.xlsx")
+
+
+
+#### join all snow dfs and calculate within-site snow
+## calculate within-site climate variable (excluding NA rows from mean calculation)
+UK_snow <- snowUK03_04.df2 %>%
+  group_by(site) %>%
+  mutate(between_site_snowUK03_04=mean(snowUK03_04, na.rm = TRUE)) %>%
+  mutate(within_site_snowUK03_04=snowUK03_04-between_site_snowUK03_04) %>%
+  mutate(between_site_march_snow=mean(march_snow, na.rm = TRUE)) %>%
+  mutate(within_site_march_snow=march_snow-between_site_march_snow) %>%  
+  mutate(between_site_april_snow=mean(april_snow, na.rm = TRUE)) %>%
+  mutate(within_site_april_snow=april_snow-between_site_april_snow) %>%
+  select(site, year, within_site_march_snow, within_site_april_snow, within_site_snowUK03_04)
+
+# join to breeding sites
+breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
+
+
+# GC
+GC_RZ <- subset(breeding_sites, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_snow <- subset(UK_snow, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_RZ_snow <- GC_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GC_snow, by="year") 
+# GEF
+GEF_RZ <- subset(breeding_sites, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_snow <- subset(UK_snow, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_RZ_snow <- GEF_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GEF_snow, by="year") 
+# GE
+GE_RZ <- subset(breeding_sites, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_snow <- subset(UK_snow, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_RZ_snow <- GE_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GE_snow, by="year") 
+# HW
+HW_RZ <- subset(breeding_sites, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_snow <- subset(UK_snow, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_RZ_snow <- HW_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(HW_snow, by="year") 
+# LM
+LM_RZ <- subset(breeding_sites, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_snow <- subset(UK_snow, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_RZ_snow <- LM_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(LM_snow, by="year") 
+# RD
+RD_RZ <- subset(breeding_sites, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_snow <- subset(UK_snow, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_RZ_snow <- RD_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(RD_snow, by="year") 
+
+# join all sites together
+RZ_UK_snow2 <- rbind(GC_RZ_snow, GEF_RZ_snow, GE_RZ_snow, HW_RZ_snow, LM_RZ_snow, RD_RZ_snow)
+RZ_UK_snow2 <- RZ_UK_snow2 %>%
+  select(site.x, year, territory_occupancy, early_nests, second_broods, mean_first_egg, 
+         earliest_first_egg, mean_first_egg_late, Mayfield_ns_early, Mayfield_ns_late, nests_monitored, successful_nests,
+         within_site_march_snow, within_site_april_snow, within_site_snowUK03_04)
+colnames(RZ_UK_snow2) <- c("site", "year", "territory_occupancy", "early_nests", "second_broods", 
+                           "mean_first_egg", "earliest_first_egg", "mean_first_egg_late", "Mayfield_ns_early",
+                           "Mayfield_ns_late", "nests_monitored", "successful_nests", 
+                           "within_site_march_snow", "within_site_april_snow", "within_site_snowUK03_04") 
+# export to excel
+write_xlsx(RZ_UK_snow2, "~/Dropbox/1. DISS/Sorrel/data/RZ_UK_snow3.xlsx")
+
+
+###########
+
+##### Maximum temperature
+
+## aggregate each set of two months to create each climate variable
+# pptGC03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptGC03_08.xlsx")
+tmaxGC03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmaxGC03_08.xlsx")
+# pptGEF03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptGEF03_08.xlsx")
+tmaxGEF03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmaxGEF03_08.xlsx")
+# pptGE03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptGE03_08.xlsx")
+tmaxGE03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmaxGE03_08.xlsx")
+# pptHW03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptHW03_08.xlsx")
+tmaxHW03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmaxHW03_08.xlsx")
+# pptLM03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptLM03_08.xlsx")
+tmaxLM03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmaxLM03_08.xlsx")
+# pptRD03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptRD03_08.xlsx")
+tmaxRD03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmaxRD03_08.xlsx")
+
+
+### March-April tmax
+
+## Glen Clunie March-April ppt
+# separate StdTime variable into year, month and day
+tmaxGC03_08.df <- separate(tmaxGC03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmaxGC03.df <- subset(tmaxGC03_08.df, month == "03") # select March rows only
+tmaxGC03.df2 <- tmaxGC03.df %>%
+  select(year, MEAN)
+colnames(tmaxGC03.df2) <- c("year", "tmaxGC03")
+# April ppt
+tmaxGC04.df <- subset(tmaxGC03_08.df, month == "04") # select April rows only
+tmaxGC04.df2 <- tmaxGC04.df %>%
+  select(year, MEAN)
+colnames(tmaxGC04.df2) <- c("year", "tmaxGC04")
+# join March and April dfs
+tmaxGC03_04.df <- tmaxGC03.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxGC04.df2)
+# mean March and April ppt
+tmaxGC03_04.df2 <- tmaxGC03_04.df %>%
+  rowwise() %>%
+  mutate(tmaxUK03_04 = mean(c(tmaxGC03,tmaxGC04))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, tmaxUK03_04)
+
+## Glen Effock march-april ppt
+# separate StdTime variable into year, month and day
+tmaxGEF03_08.df <- separate(tmaxGEF03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmaxGEF03.df <- subset(tmaxGEF03_08.df, month == "03") # select March rows only
+tmaxGEF03.df2 <- tmaxGEF03.df %>%
+  select(year, MEAN)
+colnames(tmaxGEF03.df2) <- c("year", "tmaxGEF03")
+# April ppt
+tmaxGEF04.df <- subset(tmaxGEF03_08.df, month == "04") # select April rows only
+tmaxGEF04.df2 <- tmaxGEF04.df %>%
+  select(year, MEAN)
+colnames(tmaxGEF04.df2) <- c("year", "tmaxGEF04")
+# join March and April dfs
+tmaxGEF03_04.df <- tmaxGEF03.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxGEF04.df2)
+# mean March and April ppt
+tmaxGEF03_04.df2 <- tmaxGEF03_04.df %>%
+  rowwise() %>%
+  mutate(tmaxUK03_04 = mean(c(tmaxGEF03,tmaxGEF04))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, tmaxUK03_04)
+
+## Glen Esk spring (march-april) tmax
+# separate StdTime variable into year, month and day
+tmaxGE03_08.df <- separate(tmaxGE03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmaxGE03.df <- subset(tmaxGE03_08.df, month == "03") # select March rows only
+tmaxGE03.df2 <- tmaxGE03.df %>%
+  select(year, MEAN)
+colnames(tmaxGE03.df2) <- c("year", "tmaxGE03")
+# April ppt
+tmaxGE04.df <- subset(tmaxGE03_08.df, month == "04") # select April rows only
+tmaxGE04.df2 <- tmaxGE04.df %>%
+  select(year, MEAN)
+colnames(tmaxGE04.df2) <- c("year", "tmaxGE04")
+# join March and April dfs
+tmaxGE03_04.df <- tmaxGE03.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxGE04.df2)
+# mean March and April ppt
+tmaxGE03_04.df2 <- tmaxGE03_04.df %>%
+  rowwise() %>%
+  mutate(tmaxUK03_04 = mean(c(tmaxGE03,tmaxGE04))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, tmaxUK03_04)
+
+## Haweswater spring (march-april) tmax
+# separate StdTime variable into year, month and day
+tmaxHW03_08.df <- separate(tmaxHW03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmaxHW03.df <- subset(tmaxHW03_08.df, month == "03") # select March rows only
+tmaxHW03.df2 <- tmaxHW03.df %>%
+  select(year, MEAN)
+colnames(tmaxHW03.df2) <- c("year", "tmaxHW03")
+# April ppt
+tmaxHW04.df <- subset(tmaxHW03_08.df, month == "04") # select April rows only
+tmaxHW04.df2 <- tmaxHW04.df %>%
+  select(year, MEAN)
+colnames(tmaxHW04.df2) <- c("year", "tmaxHW04")
+# join March and April dfs
+tmaxHW03_04.df <- tmaxHW03.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxHW04.df2)
+# mean March and April ppt
+tmaxHW03_04.df2 <- tmaxHW03_04.df %>%
+  rowwise() %>%
+  mutate(tmaxUK03_04 = mean(c(tmaxHW03,tmaxHW04))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, tmaxUK03_04)
+
+## Long Mynd march-april tmax
+# separate StdTime variable into year, month and day
+tmaxLM03_08.df <- separate(tmaxLM03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmaxLM03.df <- subset(tmaxLM03_08.df, month == "03") # select March rows only
+tmaxLM03.df2 <- tmaxLM03.df %>%
+  select(year, MEAN)
+colnames(tmaxLM03.df2) <- c("year", "tmaxLM03")
+# April ppt
+tmaxLM04.df <- subset(tmaxLM03_08.df, month == "04") # select April rows only
+tmaxLM04.df2 <- tmaxLM04.df %>%
+  select(year, MEAN)
+colnames(tmaxLM04.df2) <- c("year", "tmaxLM04")
+# join March and April dfs
+tmaxLM03_04.df <- tmaxLM03.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxLM04.df2)
+# mean March and April ppt
+tmaxLM03_04.df2 <- tmaxLM03_04.df %>%
+  rowwise() %>%
+  mutate(tmaxUK03_04 = mean(c(tmaxLM03,tmaxLM04))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, tmaxUK03_04)
+
+## Rosedale spring (march-april) ppt
+# separate StdTime variable into year, month and day
+tmaxRD03_08.df <- separate(tmaxRD03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmaxRD03.df <- subset(tmaxRD03_08.df, month == "03") # select March rows only
+tmaxRD03.df2 <- tmaxRD03.df %>%
+  select(year, MEAN)
+colnames(tmaxRD03.df2) <- c("year", "tmaxRD03")
+# April ppt
+tmaxRD04.df <- subset(tmaxRD03_08.df, month == "04") # select April rows only
+tmaxRD04.df2 <- tmaxRD04.df %>%
+  select(year, MEAN)
+colnames(tmaxRD04.df2) <- c("year", "tmaxRD04")
+# join March and April dfs
+tmaxRD03_04.df <- tmaxRD03.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxRD04.df2)
+# mean March and April ppt
+tmaxRD03_04.df2 <- tmaxRD03_04.df %>%
+  rowwise() %>%
+  mutate(tmaxUK03_04 = mean(c(tmaxRD03,tmaxRD04))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, tmaxUK03_04)
+
+### put all sites into one dataframe
+tmaxUK03_04.df <- rbind(tmaxGC03_04.df2, tmaxGEF03_04.df2, tmaxGE03_04.df2, tmaxHW03_04.df2, tmaxLM03_04.df2, tmaxRD03_04.df2)
+
+
+###########
+
+### May-June maximum temperature
+
+## Glen Clunie May-June tmax
+# May ppt
+tmaxGC05.df <- subset(tmaxGC03_08.df, month == "05") # select March rows only
+tmaxGC05.df2 <- tmaxGC05.df %>%
+  select(year, MEAN)
+colnames(tmaxGC05.df2) <- c("year", "tmaxGC05")
+# June ppt
+tmaxGC06.df <- subset(tmaxGC03_08.df, month == "06") # select April rows only
+tmaxGC06.df2 <- tmaxGC06.df %>%
+  select(year, MEAN)
+colnames(tmaxGC06.df2) <- c("year", "tmaxGC06")
+# join March and April dfs
+tmaxGC05_06.df <- tmaxGC05.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxGC06.df2)
+# mean March and April ppt
+tmaxGC05_06.df2 <- tmaxGC05_06.df %>%
+  rowwise() %>%
+  mutate(tmaxUK05_06 = mean(c(tmaxGC05,tmaxGC06))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, tmaxUK05_06)
+
+## Glen Effock May-June tmax
+# May ppt
+tmaxGEF05.df <- subset(tmaxGEF03_08.df, month == "05") # select March rows only
+tmaxGEF05.df2 <- tmaxGEF05.df %>%
+  select(year, MEAN)
+colnames(tmaxGEF05.df2) <- c("year", "tmaxGEF05")
+# June ppt
+tmaxGEF06.df <- subset(tmaxGEF03_08.df, month == "06") # select April rows only
+tmaxGEF06.df2 <- tmaxGEF06.df %>%
+  select(year, MEAN)
+colnames(tmaxGEF06.df2) <- c("year", "tmaxGEF06")
+# join March and April dfs
+tmaxGEF05_06.df <- tmaxGEF05.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxGEF06.df2)
+# mean March and April ppt
+tmaxGEF05_06.df2 <- tmaxGEF05_06.df %>%
+  rowwise() %>%
+  mutate(tmaxUK05_06 = mean(c(tmaxGEF05,tmaxGEF06))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, tmaxUK05_06)
+
+## Glen Esk May-June tmax
+# May ppt
+tmaxGE05.df <- subset(tmaxGE03_08.df, month == "05") # select March rows only
+tmaxGE05.df2 <- tmaxGE05.df %>%
+  select(year, MEAN)
+colnames(tmaxGE05.df2) <- c("year", "tmaxGE05")
+# June ppt
+tmaxGE06.df <- subset(tmaxGE03_08.df, month == "06") # select April rows only
+tmaxGE06.df2 <- tmaxGE06.df %>%
+  select(year, MEAN)
+colnames(tmaxGE06.df2) <- c("year", "tmaxGE06")
+# join March and April dfs
+tmaxGE05_06.df <- tmaxGE05.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxGE06.df2)
+# mean March and April ppt
+tmaxGE05_06.df2 <- tmaxGE05_06.df %>%
+  rowwise() %>%
+  mutate(tmaxUK05_06 = mean(c(tmaxGE05,tmaxGE06))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, tmaxUK05_06)
+
+## Haweswater May-June ppt
+# May ppt
+tmaxHW05.df <- subset(tmaxHW03_08.df, month == "05") # select March rows only
+tmaxHW05.df2 <- tmaxHW05.df %>%
+  select(year, MEAN)
+colnames(tmaxHW05.df2) <- c("year", "tmaxHW05")
+# June ppt
+tmaxHW06.df <- subset(tmaxHW03_08.df, month == "06") # select April rows only
+tmaxHW06.df2 <- tmaxHW06.df %>%
+  select(year, MEAN)
+colnames(tmaxHW06.df2) <- c("year", "tmaxHW06")
+# join March and April dfs
+tmaxHW05_06.df <- tmaxHW05.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxHW06.df2)
+# mean March and April ppt
+tmaxHW05_06.df2 <- tmaxHW05_06.df %>%
+  rowwise() %>%
+  mutate(tmaxUK05_06 = mean(c(tmaxHW05,tmaxHW06))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, tmaxUK05_06)
+
+## Long Mynd May-June tmax
+# May ppt
+tmaxLM05.df <- subset(tmaxLM03_08.df, month == "05") # select March rows only
+tmaxLM05.df2 <- tmaxHW05.df %>%
+  select(year, MEAN)
+colnames(tmaxLM05.df2) <- c("year", "tmaxLM05")
+# June ppt
+tmaxLM06.df <- subset(tmaxLM03_08.df, month == "06") # select April rows only
+tmaxLM06.df2 <- tmaxLM06.df %>%
+  select(year, MEAN)
+colnames(tmaxLM06.df2) <- c("year", "tmaxLM06")
+# join March and April dfs
+tmaxLM05_06.df <- tmaxLM05.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxLM06.df2)
+# mean March and April ppt
+tmaxLM05_06.df2 <- tmaxLM05_06.df %>%
+  rowwise() %>%
+  mutate(tmaxUK05_06 = mean(c(tmaxLM05,tmaxLM06))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, tmaxUK05_06)
+
+## Rosedale May-June ppt
+# May ppt
+tmaxRD05.df <- subset(tmaxRD03_08.df, month == "05") # select March rows only
+tmaxRD05.df2 <- tmaxRD05.df %>%
+  select(year, MEAN)
+colnames(tmaxRD05.df2) <- c("year", "tmaxRD05")
+# June ppt
+tmaxRD06.df <- subset(tmaxRD03_08.df, month == "06") # select April rows only
+tmaxRD06.df2 <- tmaxRD06.df %>%
+  select(year, MEAN)
+colnames(tmaxRD06.df2) <- c("year", "tmaxRD06")
+# join March and April dfs
+tmaxRD05_06.df <- tmaxRD05.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxRD06.df2)
+# mean March and April ppt
+tmaxRD05_06.df2 <- tmaxRD05_06.df %>%
+  rowwise() %>%
+  mutate(tmaxUK05_06 = mean(c(tmaxRD05,tmaxRD06))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, tmaxUK05_06)
+
+### put all sites into one dataframe
+tmaxUK05_06.df <- rbind(tmaxGC05_06.df2, tmaxGEF05_06.df2, tmaxGE05_06.df2, tmaxHW05_06.df2, tmaxLM05_06.df2, tmaxRD05_06.df2)
+
+###########
+
+### July-August Precipitation
+
+## Glen Clunie July-August ppt
+# May ppt
+tmaxGC07.df <- subset(tmaxGC03_08.df, month == "07") # select March rows only
+tmaxGC07.df2 <- tmaxGC07.df %>%
+  select(year, MEAN)
+colnames(tmaxGC07.df2) <- c("year", "tmaxGC07")
+# June ppt
+tmaxGC08.df <- subset(tmaxGC03_08.df, month == "08") # select April rows only
+tmaxGC08.df2 <- tmaxGC08.df %>%
+  select(year, MEAN)
+colnames(tmaxGC08.df2) <- c("year", "tmaxGC08")
+# join March and April dfs
+tmaxGC07_08.df <- tmaxGC07.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxGC08.df2)
+# mean March and April ppt
+tmaxGC07_08.df2 <- tmaxGC07_08.df %>%
+  rowwise() %>%
+  mutate(tmaxUK07_08 = mean(c(tmaxGC07,tmaxGC08))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, tmaxUK07_08)
+# create new column with lagged climate variables
+tmaxGC07_08.df2$year <- as.numeric(tmaxGC07_08.df2$year) # convert year from character to numeric variable
+lag_tmaxGC07_08.df <- tmaxGC07_08.df2 # create new dataframe and lag the year variable
+lag_tmaxGC07_08.df$year <- tmaxGC07_08.df2$year+1
+colnames(lag_tmaxGC07_08.df) <- c("site", "year", "lag1_tmaxUK07_08") # change column names
+
+## Glen Effock July-August ppt
+# May ppt
+tmaxGEF07.df <- subset(tmaxGEF03_08.df, month == "07") # select March rows only
+tmaxGEF07.df2 <- tmaxGEF07.df %>%
+  select(year, MEAN)
+colnames(tmaxGEF07.df2) <- c("year", "tmaxGEF07")
+# June ppt
+tmaxGEF08.df <- subset(tmaxGEF03_08.df, month == "08") # select April rows only
+tmaxGEF08.df2 <- tmaxGEF08.df %>%
+  select(year, MEAN)
+colnames(tmaxGEF08.df2) <- c("year", "tmaxGEF08")
+# join March and April dfs
+tmaxGEF07_08.df <- tmaxGEF07.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxGEF08.df2)
+# mean March and April ppt
+tmaxGEF07_08.df2 <- tmaxGEF07_08.df %>%
+  rowwise() %>%
+  mutate(tmaxUK07_08 = mean(c(tmaxGEF07,tmaxGEF08))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, tmaxUK07_08)
+# create new column with lagged climate variables
+tmaxGEF07_08.df2$year <- as.numeric(tmaxGEF07_08.df2$year) # convert year from character to numeric variable
+lag_tmaxGEF07_08.df <- tmaxGEF07_08.df2 # create new dataframe and lag the year variable
+lag_tmaxGEF07_08.df$year <- tmaxGEF07_08.df2$year+1
+colnames(lag_tmaxGEF07_08.df) <- c("site", "year", "lag1_tmaxUK07_08") # change column names
+
+## Glen Esk July-August ppt
+# May ppt
+tmaxGE07.df <- subset(tmaxGE03_08.df, month == "07") # select March rows only
+tmaxGE07.df2 <- tmaxGE07.df %>%
+  select(year, MEAN)
+colnames(tmaxGE07.df2) <- c("year", "tmaxGE07")
+# June ppt
+tmaxGE08.df <- subset(tmaxGE03_08.df, month == "08") # select April rows only
+tmaxGE08.df2 <- tmaxGE08.df %>%
+  select(year, MEAN)
+colnames(tmaxGE08.df2) <- c("year", "tmaxGE08")
+# join March and April dfs
+tmaxGE07_08.df <- tmaxGE07.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxGE08.df2)
+# mean March and April ppt
+tmaxGE07_08.df2 <- tmaxGE07_08.df %>%
+  rowwise() %>%
+  mutate(tmaxUK07_08 = mean(c(tmaxGE07,tmaxGE08))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, tmaxUK07_08)
+# create new column with lagged climate variables
+tmaxGE07_08.df2$year <- as.numeric(tmaxGE07_08.df2$year) # convert year from character to numeric variable
+lag_tmaxGE07_08.df <- tmaxGE07_08.df2 # create new dataframe and lag the year variable
+lag_tmaxGE07_08.df$year <- tmaxGE07_08.df2$year+1
+colnames(lag_tmaxGE07_08.df) <- c("site", "year", "lag1_tmaxUK07_08") # change column names
+
+## Haweswater July-August ppt
+# May ppt
+tmaxHW07.df <- subset(tmaxHW03_08.df, month == "07") # select March rows only
+tmaxHW07.df2 <- tmaxHW07.df %>%
+  select(year, MEAN)
+colnames(tmaxHW07.df2) <- c("year", "tmaxHW07")
+# June ppt
+tmaxHW08.df <- subset(tmaxHW03_08.df, month == "08") # select April rows only
+tmaxHW08.df2 <- tmaxHW08.df %>%
+  select(year, MEAN)
+colnames(tmaxHW08.df2) <- c("year", "tmaxHW08")
+# join March and April dfs
+tmaxHW07_08.df <- tmaxHW07.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxHW08.df2)
+# mean March and April ppt
+tmaxHW07_08.df2 <- tmaxHW07_08.df %>%
+  rowwise() %>%
+  mutate(tmaxUK07_08 = mean(c(tmaxHW07,tmaxHW08))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, tmaxUK07_08)
+# create new column with lagged climate variables
+tmaxHW07_08.df2$year <- as.numeric(tmaxHW07_08.df2$year) # convert year from character to numeric variable
+lag_tmaxHW07_08.df <- tmaxHW07_08.df2 # create new dataframe and lag the year variable
+lag_tmaxHW07_08.df$year <- tmaxHW07_08.df2$year+1
+colnames(lag_tmaxHW07_08.df) <- c("site", "year", "lag1_tmaxUK07_08") # change column names
+
+## Long Mynd July-August ppt
+# May ppt
+tmaxLM07.df <- subset(tmaxLM03_08.df, month == "07") # select March rows only
+tmaxLM07.df2 <- tmaxLM07.df %>%
+  select(year, MEAN)
+colnames(tmaxLM07.df2) <- c("year", "tmaxLM07")
+# June ppt
+tmaxLM08.df <- subset(tmaxLM03_08.df, month == "08") # select April rows only
+tmaxLM08.df2 <- tmaxLM08.df %>%
+  select(year, MEAN)
+colnames(tmaxLM08.df2) <- c("year", "tmaxLM08")
+# join March and April dfs
+tmaxLM07_08.df <- tmaxLM07.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxLM08.df2)
+# mean March and April ppt
+tmaxLM07_08.df2 <- tmaxLM07_08.df %>%
+  rowwise() %>%
+  mutate(tmaxUK07_08 = mean(c(tmaxLM07,tmaxLM08))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, tmaxUK07_08)
+# create new column with lagged climate variables
+tmaxLM07_08.df2$year <- as.numeric(tmaxLM07_08.df2$year) # convert year from character to numeric variable
+lag_tmaxLM07_08.df <- tmaxLM07_08.df2 # create new dataframe and lag the year variable
+lag_tmaxLM07_08.df$year <- tmaxLM07_08.df2$year+1
+colnames(lag_tmaxLM07_08.df) <- c("site", "year", "lag1_tmaxUK07_08") # change column names
+
+## Rosedale July-August ppt
+# May ppt
+tmaxRD07.df <- subset(tmaxRD03_08.df, month == "07") # select March rows only
+tmaxRD07.df2 <- tmaxRD07.df %>%
+  select(year, MEAN)
+colnames(tmaxRD07.df2) <- c("year", "tmaxRD07")
+# June ppt
+tmaxRD08.df <- subset(tmaxRD03_08.df, month == "08") # select April rows only
+tmaxRD08.df2 <- tmaxRD08.df %>%
+  select(year, MEAN)
+colnames(tmaxRD08.df2) <- c("year", "tmaxRD08")
+# join March and April dfs
+tmaxRD07_08.df <- tmaxRD07.df2 %>%
+  group_by(year) %>%
+  left_join(tmaxRD08.df2)
+# mean March and April ppt
+tmaxRD07_08.df2 <- tmaxRD07_08.df %>%
+  rowwise() %>%
+  mutate(tmaxUK07_08 = mean(c(tmaxRD07,tmaxRD08))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, tmaxUK07_08)
+# create new column with lagged climate variables
+tmaxRD07_08.df2$year <- as.numeric(tmaxRD07_08.df2$year) # convert year from character to numeric variable
+lag_tmaxRD07_08.df <- tmaxRD07_08.df2 # create new dataframe and lag the year variable
+lag_tmaxRD07_08.df$year <- tmaxRD07_08.df2$year+1
+colnames(lag_tmaxRD07_08.df) <- c("site", "year", "lag1_tmaxUK07_08") # change column names
+
+### put all sites into one dataframe
+lag_tmaxUK07_08.df <- rbind(lag_tmaxGC07_08.df, lag_tmaxGEF07_08.df, lag_tmaxGE07_08.df, lag_tmaxHW07_08.df, lag_tmaxLM07_08.df, lag_tmaxRD07_08.df)
+
+##### join UK_ppt to breeding sites data
+# breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx")
+breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
+library(writexl)
+## join
+# UK_tmax03_04.df
+# UK_tmax05_06.df
+# lag_tmaxUK07_08.df
+
+# split breeding sites df into each site
+# left_join each site's UK climate variable
+# join dfs at the bottom using rbind
+
+## make all year variables numeric
+tmaxGC03_04.df2$year <- as.numeric(tmaxGC03_04.df2$year)
+tmaxGC05_06.df2$year <- as.numeric(tmaxGC05_06.df2$year)
+lag_tmaxGC07_08.df$year <- as.numeric(lag_tmaxGC07_08.df$year)
+
+tmaxGE03_04.df2$year <- as.numeric(tmaxGE03_04.df2$year)
+tmaxGE05_06.df2$year <- as.numeric(tmaxGE05_06.df2$year)
+lag_tmaxGE07_08.df$year <- as.numeric(lag_tmaxGE07_08.df$year)
+
+tmaxGEF03_04.df2$year <- as.numeric(tmaxGEF03_04.df2$year)
+tmaxGEF05_06.df2$year <- as.numeric(tmaxGEF05_06.df2$year)
+lag_tmaxGEF07_08.df$year <- as.numeric(lag_tmaxGEF07_08.df$year)
+
+tmaxHW03_04.df2$year <- as.numeric(tmaxHW03_04.df2$year)
+tmaxHW05_06.df2$year <- as.numeric(tmaxHW05_06.df2$year)
+lag_tmaxHW07_08.df$year <- as.numeric(lag_tmaxHW07_08.df$year)
+
+tmaxLM03_04.df2$year <- as.numeric(tmaxLM03_04.df2$year)
+tmaxLM05_06.df2$year <- as.numeric(tmaxLM05_06.df2$year)
+lag_tmaxLM07_08.df$year <- as.numeric(lag_tmaxLM07_08.df$year)
+
+tmaxRD03_04.df2$year <- as.numeric(tmaxRD03_04.df2$year)
+tmaxRD05_06.df2$year <- as.numeric(tmaxRD05_06.df2$year)
+lag_tmaxRD07_08.df$year <- as.numeric(lag_tmaxRD07_08.df$year)
+
+
+#### join all ppt dfs and calculate within-site ppt
+
+UK_tmax <- cbind(tmaxUK03_04.df, tmaxUK05_06.df, lag_tmaxUK07_08.df)
+colnames(UK_tmax) <- c("site", "year", "tmaxUK03_04", "site1", "year1", "tmaxUK05_06", "site2", "year2", "lag1_tmaxUK07_08") # change column names
+UK_tmax2 <- UK_tmax %>%
+  select(site, year, tmaxUK03_04, tmaxUK05_06, lag1_tmaxUK07_08)
+
+UK_tmax3 <- UK_tmax2 %>%
+  group_by(site) %>%
+  mutate(between_site_tmaxUK03_04=mean(tmaxUK03_04)) %>%
+  mutate(within_site_tmaxUK03_04=tmaxUK03_04-between_site_tmaxUK03_04) %>%
+  mutate(between_site_tmaxUK05_06=mean(tmaxUK05_06)) %>%
+  mutate(within_site_tmaxUK05_06=tmaxUK05_06-between_site_tmaxUK05_06) %>%
+  mutate(between_site_lag1_tmaxUK07_08=mean(lag1_tmaxUK07_08)) %>%
+  mutate(within_site_lag1_tmaxUK07_08=lag1_tmaxUK07_08-between_site_lag1_tmaxUK07_08) %>%
+  select(site, year, within_site_tmaxUK03_04, within_site_tmaxUK05_06, within_site_lag1_tmaxUK07_08)
+colnames(UK_tmax3) <- c("site", "year", "tmaxUK03_04", "tmaxUK05_06", "lag1_tmaxUK07_08") # change column names
+UK_tmax3$year <- as.numeric(UK_tmax3$year)
+
+
+# join to breeding sites
+
+# GC
+GC_RZ <- subset(breeding_sites, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_tmax <- subset(UK_tmax3, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_RZ_tmax <- GC_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GC_tmax, by="year") 
+# GEF
+GEF_RZ <- subset(breeding_sites, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_tmax <- subset(UK_tmax3, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_RZ_tmax <- GEF_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GEF_tmax, by="year") 
+# GE
+GE_RZ <- subset(breeding_sites, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_tmax <- subset(UK_tmax3, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_RZ_tmax <- GE_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GE_tmax, by="year") 
+# HW
+HW_RZ <- subset(breeding_sites, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_tmax <- subset(UK_tmax3, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_RZ_tmax <- HW_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(HW_tmax, by="year") 
+# LM
+LM_RZ <- subset(breeding_sites, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_tmax <- subset(UK_tmax3, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_RZ_tmax <- LM_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(LM_tmax, by="year") 
+# RD
+RD_RZ <- subset(breeding_sites, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_tmax <- subset(UK_tmax3, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_RZ_tmax <- RD_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(RD_tmax, by="year") 
+
+# join all sites together
+RZ_UK_tmax2 <- rbind(GC_RZ_tmax, GEF_RZ_tmax, GE_RZ_tmax, HW_RZ_tmax, LM_RZ_tmax, RD_RZ_tmax)
+RZ_UK_tmax2 <- RZ_UK_tmax2 %>%
+  select(site.x, year, territory_occupancy, early_nests, second_broods, mean_first_egg, 
+         earliest_first_egg, mean_first_egg_late, Mayfield_ns_early, Mayfield_ns_late, nests_monitored, successful_nests,
+         tmaxUK03_04, tmaxUK05_06, lag1_tmaxUK07_08)
+colnames(RZ_UK_tmax2) <- c("site", "year", "territory_occupancy", "early_nests", "second_broods", 
+                          "mean_first_egg", "earliest_first_egg", "mean_first_egg_late", "Mayfield_ns_early",
+                          "Mayfield_ns_late", "nests_monitored", "successful_nests", 
+                          "tmaxUK03_04", "tmaxUK05_06", "lag1_tmaxUK07_08") 
+# export to excel
+write_xlsx(RZ_UK_tmax2, "~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmax2.xlsx")
+
+
+
+###########
+
+##### Mean temperature
+
+## aggregate each set of two months to create each climate variable
+# pptGC03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptGC03_08.xlsx")
+tmeanGC03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmeanGC03_08.xlsx")
+# pptGEF03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptGEF03_08.xlsx")
+tmeanGEF03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmeanGEF03_08.xlsx")
+# pptGE03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptGE03_08.xlsx")
+tmeanGE03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmeanGE03_08.xlsx")
+# pptHW03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptHW03_08.xlsx")
+tmeanHW03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmeanHW03_08.xlsx")
+# pptLM03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptLM03_08.xlsx")
+tmeanLM03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmeanLM03_08.xlsx")
+# pptRD03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptRD03_08.xlsx")
+tmeanRD03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tmeanRD03_08.xlsx")
+
+
+### March-April tmean
+
+## Glen Clunie March-April tmean
+# separate StdTime variable into year, month and day
+tmeanGC03_08.df <- separate(tmeanGC03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmeanGC03.df <- subset(tmeanGC03_08.df, month == "03") # select March rows only
+tmeanGC03.df2 <- tmeanGC03.df %>%
+  select(year, MEAN)
+colnames(tmeanGC03.df2) <- c("year", "tmeanGC03")
+# April ppt
+tmeanGC04.df <- subset(tmeanGC03_08.df, month == "04") # select April rows only
+tmeanGC04.df2 <- tmeanGC04.df %>%
+  select(year, MEAN)
+colnames(tmeanGC04.df2) <- c("year", "tmeanGC04")
+# join March and April dfs
+tmeanGC03_04.df <- tmeanGC03.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanGC04.df2)
+# mean March and April ppt
+tmeanGC03_04.df2 <- tmeanGC03_04.df %>%
+  rowwise() %>%
+  mutate(tmeanUK03_04 = mean(c(tmeanGC03,tmeanGC04))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, tmeanUK03_04)
+
+## Glen Effock march-april tmean
+# separate StdTime variable into year, month and day
+tmeanGEF03_08.df <- separate(tmeanGEF03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmeanGEF03.df <- subset(tmeanGEF03_08.df, month == "03") # select March rows only
+tmeanGEF03.df2 <- tmeanGEF03.df %>%
+  select(year, MEAN)
+colnames(tmeanGEF03.df2) <- c("year", "tmeanGEF03")
+# April ppt
+tmeanGEF04.df <- subset(tmeanGEF03_08.df, month == "04") # select April rows only
+tmeanGEF04.df2 <- tmeanGEF04.df %>%
+  select(year, MEAN)
+colnames(tmeanGEF04.df2) <- c("year", "tmeanGEF04")
+# join March and April dfs
+tmeanGEF03_04.df <- tmeanGEF03.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanGEF04.df2)
+# mean March and April ppt
+tmeanGEF03_04.df2 <- tmeanGEF03_04.df %>%
+  rowwise() %>%
+  mutate(tmeanUK03_04 = mean(c(tmeanGEF03,tmeanGEF04))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, tmeanUK03_04)
+
+## Glen Esk spring (march-april) tmean
+# separate StdTime variable into year, month and day
+tmeanGE03_08.df <- separate(tmeanGE03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmeanGE03.df <- subset(tmeanGE03_08.df, month == "03") # select March rows only
+tmeanGE03.df2 <- tmeanGE03.df %>%
+  select(year, MEAN)
+colnames(tmeanGE03.df2) <- c("year", "tmeanGE03")
+# April ppt
+tmeanGE04.df <- subset(tmeanGE03_08.df, month == "04") # select April rows only
+tmeanGE04.df2 <- tmeanGE04.df %>%
+  select(year, MEAN)
+colnames(tmeanGE04.df2) <- c("year", "tmeanGE04")
+# join March and April dfs
+tmeanGE03_04.df <- tmeanGE03.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanGE04.df2)
+# mean March and April ppt
+tmeanGE03_04.df2 <- tmeanGE03_04.df %>%
+  rowwise() %>%
+  mutate(tmeanUK03_04 = mean(c(tmeanGE03,tmeanGE04))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, tmeanUK03_04)
+
+## Haweswater spring (march-april) tmax
+# separate StdTime variable into year, month and day
+tmeanHW03_08.df <- separate(tmeanHW03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmeanHW03.df <- subset(tmeanHW03_08.df, month == "03") # select March rows only
+tmeanHW03.df2 <- tmeanHW03.df %>%
+  select(year, MEAN)
+colnames(tmeanHW03.df2) <- c("year", "tmeanHW03")
+# April ppt
+tmeanHW04.df <- subset(tmeanHW03_08.df, month == "04") # select April rows only
+tmeanHW04.df2 <- tmeanHW04.df %>%
+  select(year, MEAN)
+colnames(tmeanHW04.df2) <- c("year", "tmeanHW04")
+# join March and April dfs
+tmeanHW03_04.df <- tmeanHW03.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanHW04.df2)
+# mean March and April ppt
+tmeanHW03_04.df2 <- tmeanHW03_04.df %>%
+  rowwise() %>%
+  mutate(tmeanUK03_04 = mean(c(tmeanHW03,tmeanHW04))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, tmeanUK03_04)
+
+## Long Mynd march-april tmax
+# separate StdTime variable into year, month and day
+tmeanLM03_08.df <- separate(tmeanLM03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmeanLM03.df <- subset(tmeanLM03_08.df, month == "03") # select March rows only
+tmeanLM03.df2 <- tmeanLM03.df %>%
+  select(year, MEAN)
+colnames(tmeanLM03.df2) <- c("year", "tmeanLM03")
+# April ppt
+tmeanLM04.df <- subset(tmeanLM03_08.df, month == "04") # select April rows only
+tmeanLM04.df2 <- tmeanLM04.df %>%
+  select(year, MEAN)
+colnames(tmeanLM04.df2) <- c("year", "tmeanLM04")
+# join March and April dfs
+tmeanLM03_04.df <- tmeanLM03.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanLM04.df2)
+# mean March and April ppt
+tmeanLM03_04.df2 <- tmeanLM03_04.df %>%
+  rowwise() %>%
+  mutate(tmeanUK03_04 = mean(c(tmeanLM03,tmeanLM04))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, tmeanUK03_04)
+
+## Rosedale spring (march-april) ppt
+# separate StdTime variable into year, month and day
+tmeanRD03_08.df <- separate(tmeanRD03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tmeanRD03.df <- subset(tmeanRD03_08.df, month == "03") # select March rows only
+tmeanRD03.df2 <- tmeanRD03.df %>%
+  select(year, MEAN)
+colnames(tmeanRD03.df2) <- c("year", "tmeanRD03")
+# April ppt
+tmeanRD04.df <- subset(tmeanRD03_08.df, month == "04") # select April rows only
+tmeanRD04.df2 <- tmeanRD04.df %>%
+  select(year, MEAN)
+colnames(tmeanRD04.df2) <- c("year", "tmeanRD04")
+# join March and April dfs
+tmeanRD03_04.df <- tmeanRD03.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanRD04.df2)
+# mean March and April ppt
+tmeanRD03_04.df2 <- tmeanRD03_04.df %>%
+  rowwise() %>%
+  mutate(tmeanUK03_04 = mean(c(tmeanRD03,tmeanRD04))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, tmeanUK03_04)
+
+### put all sites into one dataframe
+tmeanUK03_04.df <- rbind(tmeanGC03_04.df2, tmeanGEF03_04.df2, tmeanGE03_04.df2, tmeanHW03_04.df2, tmeanLM03_04.df2, tmeanRD03_04.df2)
+
+
+###########
+
+### May-June mean temperature
+
+## Glen Clunie May-June tmean
+# May ppt
+tmeanGC05.df <- subset(tmeanGC03_08.df, month == "05") # select March rows only
+tmeanGC05.df2 <- tmeanGC05.df %>%
+  select(year, MEAN)
+colnames(tmeanGC05.df2) <- c("year", "tmeanGC05")
+# June ppt
+tmeanGC06.df <- subset(tmeanGC03_08.df, month == "06") # select April rows only
+tmeanGC06.df2 <- tmeanGC06.df %>%
+  select(year, MEAN)
+colnames(tmeanGC06.df2) <- c("year", "tmeanGC06")
+# join March and April dfs
+tmeanGC05_06.df <- tmeanGC05.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanGC06.df2)
+# mean March and April ppt
+tmeanGC05_06.df2 <- tmeanGC05_06.df %>%
+  rowwise() %>%
+  mutate(tmeanUK05_06 = mean(c(tmeanGC05,tmeanGC06))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, tmeanUK05_06)
+
+## Glen Effock May-June tmax
+# May ppt
+tmeanGEF05.df <- subset(tmeanGEF03_08.df, month == "05") # select March rows only
+tmeanGEF05.df2 <- tmeanGEF05.df %>%
+  select(year, MEAN)
+colnames(tmeanGEF05.df2) <- c("year", "tmeanGEF05")
+# June ppt
+tmeanGEF06.df <- subset(tmeanGEF03_08.df, month == "06") # select April rows only
+tmeanGEF06.df2 <-tmeanGEF06.df %>%
+  select(year, MEAN)
+colnames(tmeanGEF06.df2) <- c("year", "tmeanGEF06")
+# join March and April dfs
+tmeanGEF05_06.df <- tmeanGEF05.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanGEF06.df2)
+# mean March and April ppt
+tmeanGEF05_06.df2 <- tmeanGEF05_06.df %>%
+  rowwise() %>%
+  mutate(tmeanUK05_06 = mean(c(tmeanGEF05,tmeanGEF06))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, tmeanUK05_06)
+
+## Glen Esk May-June tmax
+# May ppt
+tmeanGE05.df <- subset(tmeanGE03_08.df, month == "05") # select March rows only
+tmeanGE05.df2 <- tmeanGE05.df %>%
+  select(year, MEAN)
+colnames(tmeanGE05.df2) <- c("year", "tmeanGE05")
+# June ppt
+tmeanGE06.df <- subset(tmeanGE03_08.df, month == "06") # select April rows only
+tmeanGE06.df2 <- tmeanGE06.df %>%
+  select(year, MEAN)
+colnames(tmeanGE06.df2) <- c("year", "tmeanGE06")
+# join March and April dfs
+tmeanGE05_06.df <- tmeanGE05.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanGE06.df2)
+# mean March and April ppt
+tmeanGE05_06.df2 <- tmeanGE05_06.df %>%
+  rowwise() %>%
+  mutate(tmeanUK05_06 = mean(c(tmeanGE05,tmeanGE06))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, tmeanUK05_06)
+
+## Haweswater May-June ppt
+# May ppt
+tmeanHW05.df <- subset(tmeanHW03_08.df, month == "05") # select March rows only
+tmeanHW05.df2 <- tmeanHW05.df %>%
+  select(year, MEAN)
+colnames(tmeanHW05.df2) <- c("year", "tmeanHW05")
+# June ppt
+tmeanHW06.df <- subset(tmeanHW03_08.df, month == "06") # select April rows only
+tmeanHW06.df2 <- tmeanHW06.df %>%
+  select(year, MEAN)
+colnames(tmeanHW06.df2) <- c("year", "tmeanHW06")
+# join March and April dfs
+tmeanHW05_06.df <- tmeanHW05.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanHW06.df2)
+# mean March and April ppt
+tmeanHW05_06.df2 <- tmeanHW05_06.df %>%
+  rowwise() %>%
+  mutate(tmeanUK05_06 = mean(c(tmeanHW05,tmeanHW06))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, tmeanUK05_06)
+
+## Long Mynd May-June tmax
+# May ppt
+tmeanLM05.df <- subset(tmeanLM03_08.df, month == "05") # select March rows only
+tmeanLM05.df2 <- tmeanHW05.df %>%
+  select(year, MEAN)
+colnames(tmeanLM05.df2) <- c("year", "tmeanLM05")
+# June ppt
+tmeanLM06.df <- subset(tmeanLM03_08.df, month == "06") # select April rows only
+tmeanLM06.df2 <- tmeanLM06.df %>%
+  select(year, MEAN)
+colnames(tmeanLM06.df2) <- c("year", "tmeanLM06")
+# join March and April dfs
+tmeanLM05_06.df <- tmeanLM05.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanLM06.df2)
+# mean March and April ppt
+tmeanLM05_06.df2 <- tmeanLM05_06.df %>%
+  rowwise() %>%
+  mutate(tmeanUK05_06 = mean(c(tmeanLM05,tmeanLM06))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, tmeanUK05_06)
+
+## Rosedale May-June ppt
+# May ppt
+tmeanRD05.df <- subset(tmeanRD03_08.df, month == "05") # select March rows only
+tmeanRD05.df2 <- tmeanRD05.df %>%
+  select(year, MEAN)
+colnames(tmeanRD05.df2) <- c("year", "tmeanRD05")
+# June ppt
+tmeanRD06.df <- subset(tmeanRD03_08.df, month == "06") # select April rows only
+tmeanRD06.df2 <- tmeanRD06.df %>%
+  select(year, MEAN)
+colnames(tmeanRD06.df2) <- c("year", "tmeanRD06")
+# join March and April dfs
+tmeanRD05_06.df <- tmeanRD05.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanRD06.df2)
+# mean March and April ppt
+tmeanRD05_06.df2 <- tmeanRD05_06.df %>%
+  rowwise() %>%
+  mutate(tmeanUK05_06 = mean(c(tmeanRD05,tmeanRD06))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, tmeanUK05_06)
+
+### put all sites into one dataframe
+tmeanUK05_06.df <- rbind(tmeanGC05_06.df2, tmeanGEF05_06.df2, tmeanGE05_06.df2, tmeanHW05_06.df2, tmeanLM05_06.df2, tmeanRD05_06.df2)
+
+###########
+
+### July-August Precipitation
+
+## Glen Clunie July-August ppt
+# May ppt
+tmeanGC07.df <- subset(tmeanGC03_08.df, month == "07") # select March rows only
+tmeanGC07.df2 <- tmeanGC07.df %>%
+  select(year, MEAN)
+colnames(tmeanGC07.df2) <- c("year", "tmeanGC07")
+# June ppt
+tmeanGC08.df <- subset(tmeanGC03_08.df, month == "08") # select April rows only
+tmeanGC08.df2 <- tmeanGC08.df %>%
+  select(year, MEAN)
+colnames(tmeanGC08.df2) <- c("year", "tmeanGC08")
+# join March and April dfs
+tmeanGC07_08.df <- tmeanGC07.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanGC08.df2)
+# mean March and April ppt
+tmeanGC07_08.df2 <- tmeanGC07_08.df %>%
+  rowwise() %>%
+  mutate(tmeanUK07_08 = mean(c(tmeanGC07,tmeanGC08))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, tmeanUK07_08)
+# create new column with lagged climate variables
+tmeanGC07_08.df2$year <- as.numeric(tmeanGC07_08.df2$year) # convert year from character to numeric variable
+lag_tmeanGC07_08.df <- tmeanGC07_08.df2 # create new dataframe and lag the year variable
+lag_tmeanGC07_08.df$year <- tmeanGC07_08.df2$year+1
+colnames(lag_tmeanGC07_08.df) <- c("site", "year", "lag1_tmeanUK07_08") # change column names
+
+## Glen Effock July-August ppt
+# May ppt
+tmeanGEF07.df <- subset(tmeanGEF03_08.df, month == "07") # select March rows only
+tmeanGEF07.df2 <- tmeanGEF07.df %>%
+  select(year, MEAN)
+colnames(tmeanGEF07.df2) <- c("year", "tmeanGEF07")
+# June ppt
+tmeanGEF08.df <- subset(tmeanGEF03_08.df, month == "08") # select April rows only
+tmeanGEF08.df2 <- tmeanGEF08.df %>%
+  select(year, MEAN)
+colnames(tmeanGEF08.df2) <- c("year", "tmeanGEF08")
+# join March and April dfs
+tmeanGEF07_08.df <- tmeanGEF07.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanGEF08.df2)
+# mean March and April ppt
+tmeanGEF07_08.df2 <- tmeanGEF07_08.df %>%
+  rowwise() %>%
+  mutate(tmeanUK07_08 = mean(c(tmeanGEF07,tmeanGEF08))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, tmeanUK07_08)
+# create new column with lagged climate variables
+tmeanGEF07_08.df2$year <- as.numeric(tmeanGEF07_08.df2$year) # convert year from character to numeric variable
+lag_tmeanGEF07_08.df <- tmeanGEF07_08.df2 # create new dataframe and lag the year variable
+lag_tmeanGEF07_08.df$year <- tmeanGEF07_08.df2$year+1
+colnames(lag_tmeanGEF07_08.df) <- c("site", "year", "lag1_tmeanUK07_08") # change column names
+
+## Glen Esk July-August ppt
+# May ppt
+tmeanGE07.df <- subset(tmeanGE03_08.df, month == "07") # select March rows only
+tmeanGE07.df2 <- tmeanGE07.df %>%
+  select(year, MEAN)
+colnames(tmeanGE07.df2) <- c("year", "tmeanGE07")
+# June ppt
+tmeanGE08.df <- subset(tmeanGE03_08.df, month == "08") # select April rows only
+tmeanGE08.df2 <- tmeanGE08.df %>%
+  select(year, MEAN)
+colnames(tmeanGE08.df2) <- c("year", "tmeanGE08")
+# join March and April dfs
+tmeanGE07_08.df <- tmeanGE07.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanGE08.df2)
+# mean March and April ppt
+tmeanGE07_08.df2 <- tmeanGE07_08.df %>%
+  rowwise() %>%
+  mutate(tmeanUK07_08 = mean(c(tmeanGE07,tmeanGE08))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, tmeanUK07_08)
+# create new column with lagged climate variables
+tmeanGE07_08.df2$year <- as.numeric(tmeanGE07_08.df2$year) # convert year from character to numeric variable
+lag_tmeanGE07_08.df <- tmeanGE07_08.df2 # create new dataframe and lag the year variable
+lag_tmeanGE07_08.df$year <- tmeanGE07_08.df2$year+1
+colnames(lag_tmeanGE07_08.df) <- c("site", "year", "lag1_tmeanUK07_08") # change column names
+
+## Haweswater July-August ppt
+# May ppt
+tmeanHW07.df <- subset(tmeanHW03_08.df, month == "07") # select March rows only
+tmeanHW07.df2 <- tmeanHW07.df %>%
+  select(year, MEAN)
+colnames(tmeanHW07.df2) <- c("year", "tmeanHW07")
+# June ppt
+tmeanHW08.df <- subset(tmeanHW03_08.df, month == "08") # select April rows only
+tmeanHW08.df2 <- tmeanHW08.df %>%
+  select(year, MEAN)
+colnames(tmeanHW08.df2) <- c("year", "tmeanHW08")
+# join March and April dfs
+tmeanHW07_08.df <- tmeanHW07.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanHW08.df2)
+# mean March and April ppt
+tmeanHW07_08.df2 <- tmeanHW07_08.df %>%
+  rowwise() %>%
+  mutate(tmeanUK07_08 = mean(c(tmeanHW07,tmeanHW08))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, tmeanUK07_08)
+# create new column with lagged climate variables
+tmeanHW07_08.df2$year <- as.numeric(tmeanHW07_08.df2$year) # convert year from character to numeric variable
+lag_tmeanHW07_08.df <- tmeanHW07_08.df2 # create new dataframe and lag the year variable
+lag_tmeanHW07_08.df$year <- tmeanHW07_08.df2$year+1
+colnames(lag_tmeanHW07_08.df) <- c("site", "year", "lag1_tmeanUK07_08") # change column names
+
+## Long Mynd July-August ppt
+# May ppt
+tmeanLM07.df <- subset(tmeanLM03_08.df, month == "07") # select March rows only
+tmeanLM07.df2 <- tmeanLM07.df %>%
+  select(year, MEAN)
+colnames(tmeanLM07.df2) <- c("year", "tmeanLM07")
+# June ppt
+tmeanLM08.df <- subset(tmeanLM03_08.df, month == "08") # select April rows only
+tmeanLM08.df2 <- tmeanLM08.df %>%
+  select(year, MEAN)
+colnames(tmeanLM08.df2) <- c("year", "tmeanLM08")
+# join March and April dfs
+tmeanLM07_08.df <- tmeanLM07.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanLM08.df2)
+# mean March and April ppt
+tmeanLM07_08.df2 <- tmeanLM07_08.df %>%
+  rowwise() %>%
+  mutate(tmeanUK07_08 = mean(c(tmeanLM07,tmeanLM08))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, tmeanUK07_08)
+# create new column with lagged climate variables
+tmeanLM07_08.df2$year <- as.numeric(tmeanLM07_08.df2$year) # convert year from character to numeric variable
+lag_tmeanLM07_08.df <- tmeanLM07_08.df2 # create new dataframe and lag the year variable
+lag_tmeanLM07_08.df$year <- tmeanLM07_08.df2$year+1
+colnames(lag_tmeanLM07_08.df) <- c("site", "year", "lag1_tmeanUK07_08") # change column names
+
+## Rosedale July-August ppt
+# May ppt
+tmeanRD07.df <- subset(tmeanRD03_08.df, month == "07") # select March rows only
+tmeanRD07.df2 <- tmeanRD07.df %>%
+  select(year, MEAN)
+colnames(tmeanRD07.df2) <- c("year", "tmeanRD07")
+# June ppt
+tmeanRD08.df <- subset(tmeanRD03_08.df, month == "08") # select April rows only
+tmeanRD08.df2 <- tmeanRD08.df %>%
+  select(year, MEAN)
+colnames(tmeanRD08.df2) <- c("year", "tmeanRD08")
+# join March and April dfs
+tmeanRD07_08.df <- tmeanRD07.df2 %>%
+  group_by(year) %>%
+  left_join(tmeanRD08.df2)
+# mean March and April ppt
+tmeanRD07_08.df2 <- tmeanRD07_08.df %>%
+  rowwise() %>%
+  mutate(tmeanUK07_08 = mean(c(tmeanRD07,tmeanRD08))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, tmeanUK07_08)
+# create new column with lagged climate variables
+tmeanRD07_08.df2$year <- as.numeric(tmeanRD07_08.df2$year) # convert year from character to numeric variable
+lag_tmeanRD07_08.df <- tmeanRD07_08.df2 # create new dataframe and lag the year variable
+lag_tmeanRD07_08.df$year <- tmeanRD07_08.df2$year+1
+colnames(lag_tmeanRD07_08.df) <- c("site", "year", "lag1_tmeanUK07_08") # change column names
+
+### put all sites into one dataframe
+lag_tmeanUK07_08.df <- rbind(lag_tmeanGC07_08.df, lag_tmeanGEF07_08.df, lag_tmeanGE07_08.df, lag_tmeanHW07_08.df, lag_tmeanLM07_08.df, lag_tmeanRD07_08.df)
+
+##### join UK_ppt to breeding sites data
+# breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx")
+breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
+## join
+# UK_tmax03_04.df
+# UK_tmax05_06.df
+# lag_tmaxUK07_08.df
+
+# split breeding sites df into each site
+# left_join each site's UK climate variable
+# join dfs at the bottom using rbind
+
+## make all year variables numeric
+tmeanGC03_04.df2$year <- as.numeric(tmeanGC03_04.df2$year)
+tmeanGC05_06.df2$year <- as.numeric(tmeanGC05_06.df2$year)
+lag_tmeanGC07_08.df$year <- as.numeric(lag_tmeanGC07_08.df$year)
+
+tmeanGE03_04.df2$year <- as.numeric(tmeanGE03_04.df2$year)
+tmeanGE05_06.df2$year <- as.numeric(tmeanGE05_06.df2$year)
+lag_tmeanGE07_08.df$year <- as.numeric(lag_tmeanGE07_08.df$year)
+
+tmeanGEF03_04.df2$year <- as.numeric(tmeanGEF03_04.df2$year)
+tmeanGEF05_06.df2$year <- as.numeric(tmeanGEF05_06.df2$year)
+lag_tmeanGEF07_08.df$year <- as.numeric(lag_tmeanGEF07_08.df$year)
+
+tmeanHW03_04.df2$year <- as.numeric(tmeanHW03_04.df2$year)
+tmeanHW05_06.df2$year <- as.numeric(tmeanHW05_06.df2$year)
+lag_tmeanHW07_08.df$year <- as.numeric(lag_tmeanHW07_08.df$year)
+
+tmeanLM03_04.df2$year <- as.numeric(tmeanLM03_04.df2$year)
+tmeanLM05_06.df2$year <- as.numeric(tmeanLM05_06.df2$year)
+lag_tmeanLM07_08.df$year <- as.numeric(lag_tmeanLM07_08.df$year)
+
+tmeanRD03_04.df2$year <- as.numeric(tmeanRD03_04.df2$year)
+tmeanRD05_06.df2$year <- as.numeric(tmeanRD05_06.df2$year)
+lag_tmeanRD07_08.df$year <- as.numeric(lag_tmeanRD07_08.df$year)
+
+
+
+
+#### join all ppt dfs and calculate within-site ppt
+
+UK_tmean <- cbind(tmeanUK03_04.df, tmeanUK05_06.df, lag_tmeanUK07_08.df)
+colnames(UK_tmean) <- c("site", "year", "tmeanUK03_04", "site1", "year1", "tmeanUK05_06", "site2", "year2", "lag1_tmeanUK07_08") # change column names
+UK_tmean2 <- UK_tmean %>%
+  select(site, year, tmeanUK03_04, tmeanUK05_06, lag1_tmeanUK07_08)
+
+UK_tmean3 <- UK_tmean2 %>%
+  group_by(site) %>%
+  mutate(between_site_tmeanUK03_04=mean(tmeanUK03_04)) %>%
+  mutate(within_site_tmeanUK03_04=tmeanUK03_04-between_site_tmeanUK03_04) %>%
+  mutate(between_site_tmeanUK05_06=mean(tmeanUK05_06)) %>%
+  mutate(within_site_tmeanUK05_06=tmeanUK05_06-between_site_tmeanUK05_06) %>%
+  mutate(between_site_lag1_tmeanUK07_08=mean(lag1_tmeanUK07_08)) %>%
+  mutate(within_site_lag1_tmeanUK07_08=lag1_tmeanUK07_08-between_site_lag1_tmeanUK07_08) %>%
+  select(site, year, within_site_tmeanUK03_04, within_site_tmeanUK05_06, within_site_lag1_tmeanUK07_08)
+colnames(UK_tmean3) <- c("site", "year", "tmeanUK03_04", "tmeanUK05_06", "lag1_tmeanUK07_08") # change column names
+UK_tmean3$year <- as.numeric(UK_tmean3$year)
+
+
+# join to breeding sites
+
+# GC
+GC_RZ <- subset(breeding_sites, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_tmean <- subset(UK_tmean3, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_RZ_tmean <- GC_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GC_tmean, by="year") 
+# GEF
+GEF_RZ <- subset(breeding_sites, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_tmean <- subset(UK_tmean3, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_RZ_tmean <- GEF_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GEF_tmean, by="year") 
+# GE
+GE_RZ <- subset(breeding_sites, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_tmean <- subset(UK_tmean3, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_RZ_tmean <- GE_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GE_tmean, by="year") 
+# HW
+HW_RZ <- subset(breeding_sites, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_tmean <- subset(UK_tmean3, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_RZ_tmean <- HW_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(HW_tmean, by="year") 
+# LM
+LM_RZ <- subset(breeding_sites, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_tmean <- subset(UK_tmean3, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_RZ_tmean <- LM_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(LM_tmean, by="year") 
+# RD
+RD_RZ <- subset(breeding_sites, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_tmean <- subset(UK_tmean3, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_RZ_tmean <- RD_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(RD_tmean, by="year") 
+
+# join all sites together
+RZ_UK_tmean2 <- rbind(GC_RZ_tmean, GEF_RZ_tmean, GE_RZ_tmean, HW_RZ_tmean, LM_RZ_tmean, RD_RZ_tmean)
+RZ_UK_tmean2 <- RZ_UK_tmean2 %>%
+  select(site.x, year, territory_occupancy, early_nests, second_broods, mean_first_egg, 
+         earliest_first_egg, mean_first_egg_late, Mayfield_ns_early, Mayfield_ns_late, nests_monitored, successful_nests,
+         tmeanUK03_04, tmeanUK05_06, lag1_tmeanUK07_08)
+colnames(RZ_UK_tmean2) <- c("site", "year", "territory_occupancy", "early_nests", "second_broods", 
+                           "mean_first_egg", "earliest_first_egg", "mean_first_egg_late", "Mayfield_ns_early",
+                           "Mayfield_ns_late", "nests_monitored", "successful_nests", 
+                           "tmeanUK03_04", "tmeanUK05_06", "lag1_tmeanUK07_08") 
+# export to excel
+write_xlsx(RZ_UK_tmean2, "~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmean2.xlsx")
+
+
+###########
+
+##### Minimum temperature
+
+## aggregate each set of two months to create each climate variable
+# tminGC03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tminGC03_08.xlsx")
+tminGC03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tminGC03_08.xlsx")
+# tminGEF03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tminGEF03_08.xlsx")
+tminGEF03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tminGEF03_08.xlsx")
+# tminGE03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tminGE03_08.xlsx")
+tminGE03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tminGE03_08.xlsx")
+# tminHW03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tminHW03_08.xlsx")
+tminHW03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tminHW03_08.xlsx")
+# tminLM03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tminLM03_08.xlsx")
+tminLM03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tminLM03_08.xlsx")
+# tminRD03_08<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tminRD03_08.xlsx")
+tminRD03_08<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/UK_climate/tminRD03_08.xlsx")
+
+
+### March-April Minimum temperature
+
+## Glen Clunie March-April tmin
+# separate StdTime variable into year, month and day
+tminGC03_08.df <- separate(tminGC03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tminGC03.df <- subset(tminGC03_08.df, month == "03") # select March rows only
+tminGC03.df2 <- tminGC03.df %>%
+  select(year, MEAN)
+colnames(tminGC03.df2) <- c("year", "tminGC03")
+# April ppt
+tminGC04.df <- subset(tminGC03_08.df, month == "04") # select April rows only
+tminGC04.df2 <- tminGC04.df %>%
+  select(year, MEAN)
+colnames(tminGC04.df2) <- c("year", "tminGC04")
+# join March and April dfs
+tminGC03_04.df <- tminGC03.df2 %>%
+  group_by(year) %>%
+  left_join(tminGC04.df2)
+# mean March and April ppt
+tminGC03_04.df2 <- tminGC03_04.df %>%
+  rowwise() %>%
+  mutate(tminUK03_04 = mean(c(tminGC03,tminGC04))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, tminUK03_04)
+
+## Glen Effock march-april tmin
+# separate StdTime variable into year, month and day
+tminGEF03_08.df <- separate(tminGEF03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tminGEF03.df <- subset(tminGEF03_08.df, month == "03") # select March rows only
+tminGEF03.df2 <- tminGEF03.df %>%
+  select(year, MEAN)
+colnames(tminGEF03.df2) <- c("year", "tminGEF03")
+# April ppt
+tminGEF04.df <- subset(tminGEF03_08.df, month == "04") # select April rows only
+tminGEF04.df2 <- tminGEF04.df %>%
+  select(year, MEAN)
+colnames(tminGEF04.df2) <- c("year", "tminGEF04")
+# join March and April dfs
+tminGEF03_04.df <- tminGEF03.df2 %>%
+  group_by(year) %>%
+  left_join(tminGEF04.df2)
+# mean March and April ppt
+tminGEF03_04.df2 <- tminGEF03_04.df %>%
+  rowwise() %>%
+  mutate(tminUK03_04 = mean(c(tminGEF03,tminGEF04))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, tminUK03_04)
+
+## Glen Esk spring (march-april) tmin
+# separate StdTime variable into year, month and day
+tminGE03_08.df <- separate(tminGE03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tminGE03.df <- subset(tminGE03_08.df, month == "03") # select March rows only
+tminGE03.df2 <- tminGE03.df %>%
+  select(year, MEAN)
+colnames(tminGE03.df2) <- c("year", "tminGE03")
+# April ppt
+tminGE04.df <- subset(tminGE03_08.df, month == "04") # select April rows only
+tminGE04.df2 <- tminGE04.df %>%
+  select(year, MEAN)
+colnames(tminGE04.df2) <- c("year", "tminGE04")
+# join March and April dfs
+tminGE03_04.df <- tminGE03.df2 %>%
+  group_by(year) %>%
+  left_join(tminGE04.df2)
+# mean March and April ppt
+tminGE03_04.df2 <- tminGE03_04.df %>%
+  rowwise() %>%
+  mutate(tminUK03_04 = mean(c(tminGE03,tminGE04))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, tminUK03_04)
+
+## Haweswater spring (march-april) tmin
+# separate StdTime variable into year, month and day
+tminHW03_08.df <- separate(tminHW03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tminHW03.df <- subset(tminHW03_08.df, month == "03") # select March rows only
+tminHW03.df2 <- tminHW03.df %>%
+  select(year, MEAN)
+colnames(tminHW03.df2) <- c("year", "tminHW03")
+# April ppt
+tminHW04.df <- subset(tminHW03_08.df, month == "04") # select April rows only
+tminHW04.df2 <- tminHW04.df %>%
+  select(year, MEAN)
+colnames(tminHW04.df2) <- c("year", "tminHW04")
+# join March and April dfs
+tminHW03_04.df <- tminHW03.df2 %>%
+  group_by(year) %>%
+  left_join(tminHW04.df2)
+# mean March and April ppt
+tminHW03_04.df2 <- tminHW03_04.df %>%
+  rowwise() %>%
+  mutate(tminUK03_04 = mean(c(tminHW03,tminHW04))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, tminUK03_04)
+
+## Long Mynd march-april ppt
+# separate StdTime variable into year, month and day
+tminLM03_08.df <- separate(tminLM03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tminLM03.df <- subset(tminLM03_08.df, month == "03") # select March rows only
+tminLM03.df2 <- tminLM03.df %>%
+  select(year, MEAN)
+colnames(tminLM03.df2) <- c("year", "tminLM03")
+# April ppt
+tminLM04.df <- subset(tminLM03_08.df, month == "04") # select April rows only
+tminLM04.df2 <- tminLM04.df %>%
+  select(year, MEAN)
+colnames(tminLM04.df2) <- c("year", "tminLM04")
+# join March and April dfs
+tminLM03_04.df <- tminLM03.df2 %>%
+  group_by(year) %>%
+  left_join(tminLM04.df2)
+# mean March and April ppt
+tminLM03_04.df2 <- tminLM03_04.df %>%
+  rowwise() %>%
+  mutate(tminUK03_04 = mean(c(tminLM03,tminLM04))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, tminUK03_04)
+
+## Rosedale spring (march-april) ppt
+# separate StdTime variable into year, month and day
+tminRD03_08.df <- separate(tminRD03_08, "StdTime", c("year", "month", "day"), sep = "-")
+# March ppt
+tminRD03.df <- subset(tminRD03_08.df, month == "03") # select March rows only
+tminRD03.df2 <- tminRD03.df %>%
+  select(year, MEAN)
+colnames(tminRD03.df2) <- c("year", "tminRD03")
+# April ppt
+tminRD04.df <- subset(tminRD03_08.df, month == "04") # select April rows only
+tminRD04.df2 <- tminRD04.df %>%
+  select(year, MEAN)
+colnames(tminRD04.df2) <- c("year", "tminRD04")
+# join March and April dfs
+tminRD03_04.df <- tminRD03.df2 %>%
+  group_by(year) %>%
+  left_join(tminRD04.df2)
+# mean March and April ppt
+tminRD03_04.df2 <- tminRD03_04.df %>%
+  rowwise() %>%
+  mutate(tminUK03_04 = mean(c(tminRD03,tminRD04))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, tminUK03_04)
+
+### put all sites into one dataframe
+tminUK03_04.df <- rbind(tminGC03_04.df2, tminGEF03_04.df2, tminGE03_04.df2, tminHW03_04.df2, tminLM03_04.df2, tminRD03_04.df2)
+
+
+###########
+
+### May-June minimum temperature
+
+## Glen Clunie May-June ppt
+# May ppt
+tminGC05.df <- subset(tminGC03_08.df, month == "05") # select March rows only
+tminGC05.df2 <- tminGC05.df %>%
+  select(year, MEAN)
+colnames(tminGC05.df2) <- c("year", "tminGC05")
+# June ppt
+tminGC06.df <- subset(tminGC03_08.df, month == "06") # select April rows only
+tminGC06.df2 <- tminGC06.df %>%
+  select(year, MEAN)
+colnames(tminGC06.df2) <- c("year", "tminGC06")
+# join March and April dfs
+tminGC05_06.df <- tminGC05.df2 %>%
+  group_by(year) %>%
+  left_join(tminGC06.df2)
+# mean March and April ppt
+tminGC05_06.df2 <- tminGC05_06.df %>%
+  rowwise() %>%
+  mutate(tminUK05_06 = mean(c(tminGC05,tminGC06))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, tminUK05_06)
+
+## Glen Effock May-June ppt
+# May ppt
+tminGEF05.df <- subset(tminGEF03_08.df, month == "05") # select March rows only
+tminGEF05.df2 <- tminGEF05.df %>%
+  select(year, MEAN)
+colnames(tminGEF05.df2) <- c("year", "tminGEF05")
+# June ppt
+tminGEF06.df <- subset(tminGEF03_08.df, month == "06") # select April rows only
+tminGEF06.df2 <- tminGEF06.df %>%
+  select(year, MEAN)
+colnames(tminGEF06.df2) <- c("year", "tminGEF06")
+# join March and April dfs
+tminGEF05_06.df <- tminGEF05.df2 %>%
+  group_by(year) %>%
+  left_join(tminGEF06.df2)
+# mean March and April ppt
+tminGEF05_06.df2 <- tminGEF05_06.df %>%
+  rowwise() %>%
+  mutate(tminUK05_06 = mean(c(tminGEF05,tminGEF06))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, tminUK05_06)
+
+## Glen Esk May-June ppt
+# May ppt
+tminGE05.df <- subset(tminGE03_08.df, month == "05") # select March rows only
+tminGE05.df2 <- tminGE05.df %>%
+  select(year, MEAN)
+colnames(tminGE05.df2) <- c("year", "tminGE05")
+# June ppt
+tminGE06.df <- subset(tminGE03_08.df, month == "06") # select April rows only
+tminGE06.df2 <- tminGE06.df %>%
+  select(year, MEAN)
+colnames(tminGE06.df2) <- c("year", "tminGE06")
+# join March and April dfs
+tminGE05_06.df <- tminGE05.df2 %>%
+  group_by(year) %>%
+  left_join(tminGE06.df2)
+# mean March and April ppt
+tminGE05_06.df2 <- tminGE05_06.df %>%
+  rowwise() %>%
+  mutate(tminUK05_06 = mean(c(tminGE05,tminGE06))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, tminUK05_06)
+
+## Haweswater May-June ppt
+# May ppt
+tminHW05.df <- subset(tminHW03_08.df, month == "05") # select March rows only
+tminHW05.df2 <- tminHW05.df %>%
+  select(year, MEAN)
+colnames(tminHW05.df2) <- c("year", "tminHW05")
+# June ppt
+tminHW06.df <- subset(tminHW03_08.df, month == "06") # select April rows only
+tminHW06.df2 <- tminHW06.df %>%
+  select(year, MEAN)
+colnames(tminHW06.df2) <- c("year", "tminHW06")
+# join March and April dfs
+tminHW05_06.df <- tminHW05.df2 %>%
+  group_by(year) %>%
+  left_join(tminHW06.df2)
+# mean March and April ppt
+tminHW05_06.df2 <- tminHW05_06.df %>%
+  rowwise() %>%
+  mutate(tminUK05_06 = mean(c(tminHW05,tminHW06))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, tminUK05_06)
+
+## Long Mynd May-June ppt
+# May ppt
+tminLM05.df <- subset(tminLM03_08.df, month == "05") # select March rows only
+tminLM05.df2 <- tminHW05.df %>%
+  select(year, MEAN)
+colnames(tminLM05.df2) <- c("year", "tminLM05")
+# June ppt
+tminLM06.df <- subset(tminLM03_08.df, month == "06") # select April rows only
+tminLM06.df2 <- tminLM06.df %>%
+  select(year, MEAN)
+colnames(tminLM06.df2) <- c("year", "tminLM06")
+# join March and April dfs
+tminLM05_06.df <- tminLM05.df2 %>%
+  group_by(year) %>%
+  left_join(tminLM06.df2)
+# mean March and April ppt
+tminLM05_06.df2 <- tminLM05_06.df %>%
+  rowwise() %>%
+  mutate(tminUK05_06 = mean(c(tminLM05,tminLM06))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, tminUK05_06)
+
+## Rosedale May-June ppt
+# May ppt
+tminRD05.df <- subset(tminRD03_08.df, month == "05") # select March rows only
+tminRD05.df2 <- tminRD05.df %>%
+  select(year, MEAN)
+colnames(tminRD05.df2) <- c("year", "tminRD05")
+# June ppt
+tminRD06.df <- subset(tminRD03_08.df, month == "06") # select April rows only
+tminRD06.df2 <- tminRD06.df %>%
+  select(year, MEAN)
+colnames(tminRD06.df2) <- c("year", "tminRD06")
+# join March and April dfs
+tminRD05_06.df <- tminRD05.df2 %>%
+  group_by(year) %>%
+  left_join(tminRD06.df2)
+# mean March and April ppt
+tminRD05_06.df2 <- tminRD05_06.df %>%
+  rowwise() %>%
+  mutate(tminUK05_06 = mean(c(tminRD05,tminRD06))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, tminUK05_06)
+
+### put all sites into one dataframe
+tminUK05_06.df <- rbind(tminGC05_06.df2, tminGEF05_06.df2, tminGE05_06.df2, tminHW05_06.df2, tminLM05_06.df2, tminRD05_06.df2)
+
+###########
+
+### July-August minimum temperature
+
+## Glen Clunie July-August TMIN
+# May ppt
+tminGC07.df <- subset(tminGC03_08.df, month == "07") # select March rows only
+tminGC07.df2 <- tminGC07.df %>%
+  select(year, MEAN)
+colnames(tminGC07.df2) <- c("year", "tminGC07")
+# June ppt
+tminGC08.df <- subset(tminGC03_08.df, month == "08") # select April rows only
+tminGC08.df2 <- tminGC08.df %>%
+  select(year, MEAN)
+colnames(tminGC08.df2) <- c("year", "tminGC08")
+# join March and April dfs
+tminGC07_08.df <- tminGC07.df2 %>%
+  group_by(year) %>%
+  left_join(tminGC08.df2)
+# mean March and April ppt
+tminGC07_08.df2 <- tminGC07_08.df %>%
+  rowwise() %>%
+  mutate(tminUK07_08 = mean(c(tminGC07,tminGC08))) %>%
+  mutate(site="glen_clunie") %>%
+  select(site, year, tminUK07_08)
+# create new column with lagged climate variables
+tminGC07_08.df2$year <- as.numeric(tminGC07_08.df2$year) # convert year from character to numeric variable
+lag_tminGC07_08.df <- tminGC07_08.df2 # create new dataframe and lag the year variable
+lag_tminGC07_08.df$year <- tminGC07_08.df2$year+1
+colnames(lag_tminGC07_08.df) <- c("site", "year", "lag1_tminUK07_08") # change column names
+
+## Glen Effock July-August ppt
+# May ppt
+tminGEF07.df <- subset(tminGEF03_08.df, month == "07") # select March rows only
+tminGEF07.df2 <- tminGEF07.df %>%
+  select(year, MEAN)
+colnames(tminGEF07.df2) <- c("year", "tminGEF07")
+# June ppt
+tminGEF08.df <- subset(tminGEF03_08.df, month == "08") # select April rows only
+tminGEF08.df2 <- tminGEF08.df %>%
+  select(year, MEAN)
+colnames(tminGEF08.df2) <- c("year", "tminGEF08")
+# join March and April dfs
+tminGEF07_08.df <- tminGEF07.df2 %>%
+  group_by(year) %>%
+  left_join(tminGEF08.df2)
+# mean March and April ppt
+tminGEF07_08.df2 <- tminGEF07_08.df %>%
+  rowwise() %>%
+  mutate(tminUK07_08 = mean(c(tminGEF07,tminGEF08))) %>%
+  mutate(site="glen_effock") %>%
+  select(site, year, tminUK07_08)
+# create new column with lagged climate variables
+tminGEF07_08.df2$year <- as.numeric(tminGEF07_08.df2$year) # convert year from character to numeric variable
+lag_tminGEF07_08.df <- tminGEF07_08.df2 # create new dataframe and lag the year variable
+lag_tminGEF07_08.df$year <- tminGEF07_08.df2$year+1
+colnames(lag_tminGEF07_08.df) <- c("site", "year", "lag1_tminUK07_08") # change column names
+
+## Glen Esk July-August ppt
+# May ppt
+tminGE07.df <- subset(tminGE03_08.df, month == "07") # select March rows only
+tminGE07.df2 <- tminGE07.df %>%
+  select(year, MEAN)
+colnames(tminGE07.df2) <- c("year", "tminGE07")
+# June ppt
+tminGE08.df <- subset(tminGE03_08.df, month == "08") # select April rows only
+tminGE08.df2 <- tminGE08.df %>%
+  select(year, MEAN)
+colnames(tminGE08.df2) <- c("year", "tminGE08")
+# join March and April dfs
+tminGE07_08.df <- tminGE07.df2 %>%
+  group_by(year) %>%
+  left_join(tminGE08.df2)
+# mean March and April ppt
+tminGE07_08.df2 <- tminGE07_08.df %>%
+  rowwise() %>%
+  mutate(tminUK07_08 = mean(c(tminGE07,tminGE08))) %>%
+  mutate(site="glen_esk") %>%
+  select(site, year, tminUK07_08)
+# create new column with lagged climate variables
+tminGE07_08.df2$year <- as.numeric(tminGE07_08.df2$year) # convert year from character to numeric variable
+lag_tminGE07_08.df <- tminGE07_08.df2 # create new dataframe and lag the year variable
+lag_tminGE07_08.df$year <- tminGE07_08.df2$year+1
+colnames(lag_tminGE07_08.df) <- c("site", "year", "lag1_tminUK07_08") # change column names
+
+## Haweswater July-August ppt
+# May ppt
+tminHW07.df <- subset(tminHW03_08.df, month == "07") # select March rows only
+tminHW07.df2 <- tminHW07.df %>%
+  select(year, MEAN)
+colnames(tminHW07.df2) <- c("year", "tminHW07")
+# June ppt
+tminHW08.df <- subset(tminHW03_08.df, month == "08") # select April rows only
+tminHW08.df2 <- tminHW08.df %>%
+  select(year, MEAN)
+colnames(tminHW08.df2) <- c("year", "tminHW08")
+# join March and April dfs
+tminHW07_08.df <- tminHW07.df2 %>%
+  group_by(year) %>%
+  left_join(tminHW08.df2)
+# mean March and April ppt
+tminHW07_08.df2 <- tminHW07_08.df %>%
+  rowwise() %>%
+  mutate(tminUK07_08 = mean(c(tminHW07,tminHW08))) %>%
+  mutate(site="haweswater") %>%
+  select(site, year, tminUK07_08)
+# create new column with lagged climate variables
+tminHW07_08.df2$year <- as.numeric(tminHW07_08.df2$year) # convert year from character to numeric variable
+lag_tminHW07_08.df <- tminHW07_08.df2 # create new dataframe and lag the year variable
+lag_tminHW07_08.df$year <- tminHW07_08.df2$year+1
+colnames(lag_tminHW07_08.df) <- c("site", "year", "lag1_tminUK07_08") # change column names
+
+## Long Mynd July-August ppt
+# July ppt
+tminLM07.df <- subset(tminLM03_08.df, month == "07") # select March rows only
+tminLM07.df2 <- tminLM07.df %>%
+  select(year, MEAN)
+colnames(tminLM07.df2) <- c("year", "tminLM07")
+# August ppt
+tminLM08.df <- subset(tminLM03_08.df, month == "08") # select April rows only
+tminLM08.df2 <- tminLM08.df %>%
+  select(year, MEAN)
+colnames(tminLM08.df2) <- c("year", "tminLM08")
+# join March and April dfs
+tminLM07_08.df <- tminLM07.df2 %>%
+  group_by(year) %>%
+  left_join(tminLM08.df2)
+# mean March and April ppt
+tminLM07_08.df2 <- tminLM07_08.df %>%
+  rowwise() %>%
+  mutate(tminUK07_08 = mean(c(tminLM07,tminLM08))) %>%
+  mutate(site="long_mynd") %>%
+  select(site, year, tminUK07_08)
+# create new column with lagged climate variables
+tminLM07_08.df2$year <- as.numeric(tminLM07_08.df2$year) # convert year from character to numeric variable
+lag_tminLM07_08.df <- tminLM07_08.df2 # create new dataframe and lag the year variable
+lag_tminLM07_08.df$year <- tminLM07_08.df2$year+1
+colnames(lag_tminLM07_08.df) <- c("site", "year", "lag1_tminUK07_08") # change column names
+
+## Rosedale July-August tmin
+# May ppt
+tminRD07.df <- subset(tminRD03_08.df, month == "07") # select March rows only
+tminRD07.df2 <- tminRD07.df %>%
+  select(year, MEAN)
+colnames(tminRD07.df2) <- c("year", "tminRD07")
+# June ppt
+tminRD08.df <- subset(tminRD03_08.df, month == "08") # select April rows only
+tminRD08.df2 <- tminRD08.df %>%
+  select(year, MEAN)
+colnames(tminRD08.df2) <- c("year", "tminRD08")
+# join March and April dfs
+tminRD07_08.df <- tminRD07.df2 %>%
+  group_by(year) %>%
+  left_join(tminRD08.df2)
+# mean March and April ppt
+tminRD07_08.df2 <- tminRD07_08.df %>%
+  rowwise() %>%
+  mutate(tminUK07_08 = mean(c(tminRD07,tminRD08))) %>%
+  mutate(site="rosedale") %>%
+  select(site, year, tminUK07_08)
+# create new column with lagged climate variables
+tminRD07_08.df2$year <- as.numeric(tminRD07_08.df2$year) # convert year from character to numeric variable
+lag_tminRD07_08.df <- tminRD07_08.df2 # create new dataframe and lag the year variable
+lag_tminRD07_08.df$year <- tminRD07_08.df2$year+1
+colnames(lag_tminRD07_08.df) <- c("site", "year", "lag1_tminUK07_08") # change column names
+
+### put all sites into one dataframe
+lag_tminUK07_08.df <- rbind(lag_tminGC07_08.df, lag_tminGEF07_08.df, lag_tminGE07_08.df, lag_tminHW07_08.df, lag_tminLM07_08.df, lag_tminRD07_08.df)
+
+##### join UK_ppt to breeding sites data
+# breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx")
+breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
+library(writexl)
+## join
+# UK_tmax03_04.df
+# UK_tmax05_06.df
+# lag_tmaxUK07_08.df
+
+# split breeding sites df into each site
+# left_join each site's UK climate variable
+# join dfs at the bottom using rbind
+
+## make all year variables numeric
+tminGC03_04.df2$year <- as.numeric(tminGC03_04.df2$year)
+tminGC05_06.df2$year <- as.numeric(tminGC05_06.df2$year)
+lag_tminGC07_08.df$year <- as.numeric(lag_tminGC07_08.df$year)
+
+tminGE03_04.df2$year <- as.numeric(tminGE03_04.df2$year)
+tminGE05_06.df2$year <- as.numeric(tminGE05_06.df2$year)
+lag_tminGE07_08.df$year <- as.numeric(lag_tminGE07_08.df$year)
+
+tminGEF03_04.df2$year <- as.numeric(tminGEF03_04.df2$year)
+tminGEF05_06.df2$year <- as.numeric(tminGEF05_06.df2$year)
+lag_tminGEF07_08.df$year <- as.numeric(lag_tminGEF07_08.df$year)
+
+tminHW03_04.df2$year <- as.numeric(tminHW03_04.df2$year)
+tminHW05_06.df2$year <- as.numeric(tminHW05_06.df2$year)
+lag_tminHW07_08.df$year <- as.numeric(lag_tminHW07_08.df$year)
+
+tminLM03_04.df2$year <- as.numeric(tminLM03_04.df2$year)
+tminLM05_06.df2$year <- as.numeric(tminLM05_06.df2$year)
+lag_tminLM07_08.df$year <- as.numeric(lag_tminLM07_08.df$year)
+
+tminRD03_04.df2$year <- as.numeric(tminRD03_04.df2$year)
+tminRD05_06.df2$year <- as.numeric(tminRD05_06.df2$year)
+lag_tminRD07_08.df$year <- as.numeric(lag_tminRD07_08.df$year)
+
+
+
+
+
+
+#### join all ppt dfs and calculate within-site ppt
+
+UK_tmin <- cbind(tminUK03_04.df, tminUK05_06.df, lag_tminUK07_08.df)
+colnames(UK_tmin) <- c("site", "year", "tminUK03_04", "site1", "year1", "tminUK05_06", "site2", "year2", "lag1_tminUK07_08") # change column names
+UK_tmin2 <- UK_tmin %>%
+  select(site, year, tminUK03_04, tminUK05_06, lag1_tminUK07_08)
+
+UK_tmin3 <- UK_tmin2 %>%
+  group_by(site) %>%
+  mutate(between_site_tminUK03_04=mean(tminUK03_04)) %>%
+  mutate(within_site_tminUK03_04=tminUK03_04-between_site_tminUK03_04) %>%
+  mutate(between_site_tminUK05_06=mean(tminUK05_06)) %>%
+  mutate(within_site_tminUK05_06=tminUK05_06-between_site_tminUK05_06) %>%
+  mutate(between_site_lag1_tminUK07_08=mean(lag1_tminUK07_08)) %>%
+  mutate(within_site_lag1_tminUK07_08=lag1_tminUK07_08-between_site_lag1_tminUK07_08) %>%
+  select(site, year, within_site_tminUK03_04, within_site_tminUK05_06, within_site_lag1_tminUK07_08)
+colnames(UK_tmin3) <- c("site", "year", "tminUK03_04", "tminUK05_06", "lag1_tminUK07_08") # change column names
+UK_tmin3$year <- as.numeric(UK_tmin3$year)
+
+
+# join to breeding sites
+
+# GC
+GC_RZ <- subset(breeding_sites, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_tmin <- subset(UK_tmin3, site=="glen_clunie") # subset breeding_sites to just include glen clunie
+GC_RZ_tmin <- GC_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GC_tmin, by="year") 
+# GEF
+GEF_RZ <- subset(breeding_sites, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_tmin <- subset(UK_tmin3, site=="glen_effock") # subset breeding_sites to just include glen clunie
+GEF_RZ_tmin <- GEF_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GEF_tmin, by="year") 
+# GE
+GE_RZ <- subset(breeding_sites, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_tmin <- subset(UK_tmin3, site=="glen_esk") # subset breeding_sites to just include glen clunie
+GE_RZ_tmin <- GE_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(GE_tmin, by="year") 
+# HW
+HW_RZ <- subset(breeding_sites, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_tmin <- subset(UK_tmin3, site=="haweswater") # subset breeding_sites to just include glen clunie
+HW_RZ_tmin <- HW_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(HW_tmin, by="year") 
+# LM
+LM_RZ <- subset(breeding_sites, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_tmin <- subset(UK_tmin3, site=="long_mynd") # subset breeding_sites to just include glen clunie
+LM_RZ_tmin <- LM_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(LM_tmin, by="year") 
+# RD
+RD_RZ <- subset(breeding_sites, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_tmin <- subset(UK_tmin3, site=="rosedale") # subset breeding_sites to just include glen clunie
+RD_RZ_tmin <- RD_RZ %>% # join pptGC data to glen clunie breeding sites data
+  left_join(RD_tmin, by="year") 
+
+# join all sites together
+RZ_UK_tmin2 <- rbind(GC_RZ_tmin, GEF_RZ_tmin, GE_RZ_tmin, HW_RZ_tmin, LM_RZ_tmin, RD_RZ_tmin)
+RZ_UK_tmin2 <- RZ_UK_tmin2 %>%
+  select(site.x, year, territory_occupancy, early_nests, second_broods, mean_first_egg, 
+         earliest_first_egg, mean_first_egg_late, Mayfield_ns_early, Mayfield_ns_late, nests_monitored, successful_nests,
+         tminUK03_04, tminUK05_06, lag1_tminUK07_08)
+colnames(RZ_UK_tmin2) <- c("site", "year", "territory_occupancy", "early_nests", "second_broods", 
+                            "mean_first_egg", "earliest_first_egg", "mean_first_egg_late", "Mayfield_ns_early",
+                            "Mayfield_ns_late", "nests_monitored", "successful_nests", 
+                            "tminUK03_04", "tminUK05_06", "lag1_tminUK07_08") 
+# export to excel
+write_xlsx(RZ_UK_tmin2, "~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmin2.xlsx")

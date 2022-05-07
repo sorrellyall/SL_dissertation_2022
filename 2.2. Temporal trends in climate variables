@@ -1,0 +1,687 @@
+library(dplyr) # data manipulation
+library("readxl") # open excel sheets
+library(lme4) # for lmms
+library(lmerTest)
+library(ggeffects) # to plot lmms
+library(ggplot2)
+library(tidyverse)
+library(grid) # for multi panel plots
+library(gridExtra)
+library(cowplot)
+library(inlmisc) # for colour-blind friendly colour palette
+
+#####################################################
+
+########### Atlas Mountain climate variables #############
+
+## about the climate data format
+# Value: 1 = within overwintering range, use in analysis; 0 = outside of overwintering range, ignore in analysis
+# StdTime: ignore months as each year is an aggregate of specified months. For variables that cross Dec-Jan (like pptAT11_02), the year indicates the year of the November & December means
+
+### March-May precipitation
+# pptAT03_05<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptAT03_05.xlsx")
+pptAT03_05<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/Atlas_climate/pptAT03_05.xlsx")
+
+## dataframe manipulation
+# separate StdTime into year, month, and day
+pptAT03_05.df <- separate(pptAT03_05, "StdTime", c("year", "month", "day"), sep = "-")
+# remove all rows with Value 0 (outside the overwintering range)
+pptAT03_05.df <- subset(pptAT03_05.df, Value == "1")
+# select only columns year and MEAN
+pptAT03_05.df <- pptAT03_05.df %>%
+        select(year, MEAN)
+pptAT03_05.df$year <- as.numeric(pptAT03_05.df$year)
+colnames(pptAT03_05.df) <- c("year", "pptAT03_05")
+
+## LM for Atlas March-May ppt 
+pptAT03_05_mod <- lm(pptAT03_05~year, data=pptAT03_05.df)
+summary(pptAT03_05_mod)
+# linear regression, F1,33=0.183, p=0.672, multiple R-squared=0.005517, r2adjusted=-0.0246; see Fig.1)
+
+### November-February precipitation
+# pptAT11_02<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptAT11_02.xlsx")
+pptAT11_02<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/Atlas_climate/pptAT11_02.xlsx")
+
+## dataframe manipulation
+# separate StdTime into year, month, and day
+pptAT11_02.df <- separate(pptAT11_02, "StdTime", c("year", "month", "day"), sep = "-")
+# remove all rows with Value 0 (outside the overwintering range)
+pptAT11_02.df <- subset(pptAT11_02.df, Value == "1")
+# select only columns year and MEAN
+pptAT11_02.df <- pptAT11_02.df %>%
+        select(year, MEAN)
+pptAT11_02.df$year <- as.numeric(pptAT11_02.df$year)
+colnames(pptAT11_02.df) <- c("year", "pptAT11_02")
+
+## LM for Atlas November-February ppt 
+pptAT11_02_mod <- lm(pptAT11_02~year, data=pptAT11_02.df)
+summary(pptAT11_02_mod)
+# linear regression, F1,33=1.186, p=0.284, multiple R-squared=0.0347, r2adjusted=0.00546; see Fig.1)
+
+### November-February minimum temperature
+# tminAT11_02<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tminAt11_02_quarts.xlsx")
+tminAT11_02<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/Atlas_climate/tminAt11_02_quarts.xlsx")
+
+## dataframe manipulation
+# separate StdTime into year, month, and day
+tminAT11_02.df <- separate(tminAT11_02, "StdTime", c("year", "month", "day"), sep = "-")
+# remove all rows with Value 0 (outside the overwintering range)
+tminAT11_02.df <- subset(tminAT11_02.df, Value == "1")
+#aggregate pairs of rows to calculate each winter's mean tmin, first create new column with paired years
+tminAT11_02.df$winter_year <- c("1986", "1986", "1987", "1987", "1988", "1988", "1989", "1989", "1990", "1990", "1991", "1991", "1992", "1992", "1993", "1993", "1994", "1994", "1995", "1995", "1996", "1996", "1997", "1997", "1998", "1998", "1999", "1999", "2000", "2000", "2001", "2001", "2002", "2002", "2003", "2003", "2004", "2004", "2005", "2005", "2006", "2006", "2007", "2007", "2008", "2008", "2009", "2009", "2010", "2010", "2011", "2011", "2012", "2012", "2013", "2013", "2014", "2014", "2015", "2015", "2016", "2016", "2017", "2017", "2018", "2018", "2019", "2019", "2020")
+# use pipes to calculate a mean for each winter year (winter year 1986 = Nov-Dec of 1986 + Jan-Feb of 1987)
+tminAT11_02.df <- tminAT11_02.df %>%
+        group_by(winter_year) %>%
+        mutate(winter_mean=mean(MEAN)) %>% # calculate a mean for each winter year
+        slice(1) %>% # remove duplicated rows
+        select(winter_year, winter_mean)
+tminAT11_02.df$winter_year <- as.numeric(tminAT11_02.df$winter_year)
+colnames(tminAT11_02.df) <- c("year", "tminAT11_02")
+
+# LM for Atlas November-February tmin 
+tminAT11_02_mod <- lm(tminAT11_02~year, data=tminAT11_02.df)
+summary(tminAT11_02_mod)
+# linear regression, F1,33=0.4224, p=0.520, multiple R-squared=0.01264, r2adjusted=-0.01728; see Fig.1)
+
+### November-February maximum temperature
+# tmaxAT11_02<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tmaxAt11_02_quarts.xlsx")
+tmaxAT11_02<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/Atlas_climate/tmaxAt11_02_quarts.xlsx")
+
+## dataframe manipulation
+# separate StdTime into year, month, and day
+tmaxAT11_02.df <- separate(tmaxAT11_02, "StdTime", c("year", "month", "day"), sep = "-")
+# remove all rows with Value 0 (outside the overwintering range)
+tmaxAT11_02.df <- subset(tmaxAT11_02.df, Value == "1")
+#aggregate pairs of rows to calculate each winter's mean tmin, first create new column with paired years
+tmaxAT11_02.df$winter_year <- c("1986", "1986", "1987", "1987", "1988", "1988", "1989", "1989", "1990", "1990", "1991", "1991", "1992", "1992", "1993", "1993", "1994", "1994", "1995", "1995", "1996", "1996", "1997", "1997", "1998", "1998", "1999", "1999", "2000", "2000", "2001", "2001", "2002", "2002", "2003", "2003", "2004", "2004", "2005", "2005", "2006", "2006", "2007", "2007", "2008", "2008", "2009", "2009", "2010", "2010", "2011", "2011", "2012", "2012", "2013", "2013", "2014", "2014", "2015", "2015", "2016", "2016", "2017", "2017", "2018", "2018", "2019", "2019", "2020")
+# use pipes to calculate a mean for each winter year (winter year 1986 = Nov-Dec of 1986 + Jan-Feb of 1987)
+tmaxAT11_02.df <- tmaxAT11_02.df %>%
+        group_by(winter_year) %>%
+        mutate(winter_mean=mean(MEAN)) %>% # calculate a mean for each winter year
+        slice(1) %>% # remove duplicated rows
+        select(winter_year, winter_mean)
+tmaxAT11_02.df$winter_year <- as.numeric(tmaxAT11_02.df$winter_year)
+colnames(tmaxAT11_02.df) <- c("year", "tmaxAT11_02")
+
+# LM for Atlas November-February tmax
+tmaxAT11_02_mod <- lm(tmaxAT11_02~year, data=tmaxAT11_02.df)
+summary(tmaxAT11_02_mod)
+# linear regression, F1,33=4.177, p=0.049*, multiple R-squared=0.1124, r2adjusted=0.08546; see Fig.1)
+
+######### plot with ggplot2
+
+## March-May precipitation
+pred.mm1 <- ggpredict(pptAT03_05_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p1 <- (ggplot(pred.mm1) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data = pptAT03_05.df, aes(x = year, y = pptAT03_05), color="blue", size=1) + # adding the raw data (scaled values)
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "March-May \n precipitation (mm)", title = "") + 
+               theme_classic()
+)
+
+## Nov-Feb precipitation
+pred.mm2 <- ggpredict(pptAT11_02_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p2 <- (ggplot(pred.mm2) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data = pptAT11_02.df, aes(x = year, y = pptAT11_02), color="blue", size=1) + # adding the raw data (scaled values)
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "November-February \n precipitation (mm)", title = "") + 
+               theme_classic()
+)
+
+## Nov-Feb minimum temperature
+pred.mm3 <- ggpredict(tminAT11_02_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p3 <- (ggplot(pred.mm3) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data = tminAT11_02.df, aes(x = year, y = tminAT11_02), color="red", size=1) + # adding the raw data (scaled values)
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "November-February \n minimum temperature (°C)", title = "") + 
+               theme_classic()
+)
+
+## Nov-Feb maximum temperature
+pred.mm4 <- ggpredict(tmaxAT11_02_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p4 <- (ggplot(pred.mm4) + 
+               geom_line(aes(x = x, y = predicted)) + # slope         
+               geom_point(data = tmaxAT11_02.df, aes(x = year, y = tmaxAT11_02), color="red", size=1) + # adding the raw data (scaled values)
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "November-February \n maximum temperature (°C)", title = "") + 
+               theme_classic()
+)
+
+## effect sizes
+slope1 <- pred.mm1$predicted[18] - pred.mm1$predicted[1]
+slope2 <- pred.mm2$predicted[18] - pred.mm2$predicted[1]
+slope3 <- pred.mm3$predicted[18] - pred.mm3$predicted[1]
+slope4 <- pred.mm4$predicted[18] - pred.mm4$predicted[1]
+
+## combine plots
+AT_clim_plot.all <- plot_grid(p1, p2, p3, p4,
+                              labels = c("(a)", "(b)", "(c)", "(d)"), label_size = 10,
+                              ncol=2,
+                              nrow=2,
+                              rel_widths = c(2,2))
+
+# add top and right white border for aesthetics
+AT_clim_plot.all2 <- plot_grid(AT_clim_plot.all + theme(plot.margin=unit(c(0.3,0.2,-0.5,0.2), "cm")),
+                                   top=textGrob("Year"),
+                                   nrow=2, rel_heights = c(10,0.5))
+
+AT_clim_plot.all2 # display plot
+
+
+#####################################################
+
+########### UK breeding site climate variables #############
+
+##### UK precipitation 
+
+# UK_ppt<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/UK_ppt.xlsx")
+UK_ppt<-read_excel("~/Dropbox/1. DISS/Sorrel/data/UK_ppt.xlsx")
+# cut Glen Effock rows and rename Glen Esk as Glen Effock & Glen Esk in figure legend, as these sites are too close together for the weather data to be independent
+UK_ppt2<-UK_ppt[-c(36:70), ] # cut rows before 1985
+# calculate between-site ppt and within-site ppt
+UK_ppt3 <- UK_ppt2 %>%
+  group_by(site) %>%
+  mutate(between_site_pptUK03_04=mean(pptUK03_04)) %>%
+  mutate(within_site_pptUK03_04=pptUK03_04-between_site_pptUK03_04) %>%
+  mutate(between_site_pptUK05_06=mean(pptUK05_06)) %>%
+  mutate(within_site_pptUK05_06=pptUK05_06-between_site_pptUK05_06) %>%
+  mutate(between_site_pptUK07_08=mean(pptUK07_08)) %>%
+  mutate(within_site_pptUK07_08=pptUK07_08-between_site_pptUK07_08)
+
+# remove any glen_effock rows
+UK_ppt3 <- UK_ppt3[!(UK_ppt3$site=="glen_effock"),]
+
+## March-April ppt LMM
+mod1.1 <- lmer(within_site_pptUK03_04~year+(1|year)+(1|site), data=UK_ppt3) 
+summary(mod1.1)
+
+## March-April ppt LMM without site as a random effect
+mod1 <- lmer(within_site_pptUK03_04~year+(1|year), data=UK_ppt3) 
+summary(mod1)
+
+## May-June ppt LMM
+mod3 <- lmer(within_site_pptUK05_06~year+(1|year), data=UK_ppt3) 
+summary(mod3) 
+
+## July-August ppt LMM
+mod5 <- lmer(within_site_pptUK07_08~year+(1|year), data=UK_ppt3) 
+summary(mod5) 
+
+### create plots and save as things
+## March-April
+# create df of predicted values for each year based on the glmm
+pred.mm1 <- ggpredict(mod1, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_ppt_legend <- (ggplot(pred.mm1) + 
+         geom_line(aes(x = x, y = predicted)) + # slope         
+         geom_point(data = UK_ppt3, aes(x = year, y = within_site_pptUK03_04, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "", y = "", title = "") + 
+         theme_classic() +
+           labs(color = "Site") +
+           scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"), 
+                              labels=c("Glen Clunie", "Glen Effock & Esk", "Haweswater", "Long Mynd", "Rosedale"))
+)
+
+# plot the predictions without legend
+plot_ppt_1 <- (ggplot(pred.mm1) + 
+    geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+    geom_point(data = UK_ppt3, aes(x = year, y = within_site_pptUK03_04, colour = site), size=1) + # adding the raw data (scaled values)
+      geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                  fill = "lightgrey", alpha = 0.5) +  # error band
+    labs(x = "", y = "\n Precipitation (mm)", title = "") + 
+    theme_classic() +
+      labs(color = "Site") +
+      scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## May-June
+# create df of predicted values for each year based on the glmm
+pred.mm2 <- ggpredict(mod3, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_ppt_2 <- (ggplot(pred.mm2) + 
+         geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+         geom_point(data = UK_ppt3, aes(x = year, y = within_site_pptUK05_06, colour = site), size=1) + # adding the raw data (scaled values)
+           geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                       fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "", y = "", title = "") + 
+         theme_classic() +
+           theme(legend.position="none") +
+           scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## July-August
+# create df of predicted values for each year based on the glmm
+pred.mm3 <- ggpredict(mod5, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_ppt_3 <- (ggplot(pred.mm3) + 
+         geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+         geom_point(data = UK_ppt3, aes(x = year, y = within_site_pptUK07_08, colour = site), size=1) + # adding the raw data (scaled values)
+           geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                       fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "", y = "", title = "") + 
+         theme_classic() +
+           theme(legend.position="none") +
+           scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+slope1 <- pred.mm1$predicted[18] - pred.mm1$predicted[1]
+slope2 <- pred.mm2$predicted[18] - pred.mm2$predicted[1]
+slope3 <- pred.mm3$predicted[18] - pred.mm3$predicted[1]
+
+
+##################################
+
+##### UK snow
+
+# UK_snow<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/UK_snow.xlsx")
+UK_snow<-read_excel("~/Dropbox/1. DISS/Sorrel/data/UK_snow.xlsx")
+# cut Glen Effock rows and rename Glen Esk as Glen Effock & Glen Esk in figure legend, as these sites are too close together for the weather data to be independent
+UK_snow2<-UK_snow[-c(36:70), ] # cut rows before 1985
+# calculate between-site ppt and within-site ppt
+UK_snow3 <- UK_snow2 %>%
+  group_by(site) %>%
+  mutate(between_site_march_snow=mean(march_snow)) %>%
+  mutate(within_site_march_snow=march_snow-between_site_march_snow) %>%
+  mutate(between_site_april_snow=mean(april_snow)) %>%
+  mutate(within_site_april_snow=april_snow-between_site_april_snow) %>%
+  mutate(between_site_snowUK03_04=mean(snowUK03_04)) %>%
+  mutate(within_site_snowUK03_04=snowUK03_04-between_site_snowUK03_04)
+
+# remove any glen_effock rows
+UK_snow3 <- UK_snow3[!(UK_snow3$site=="glen_effock"),]
+
+## March snow LMM
+mod1 <- lmer(within_site_march_snow~scale(year)+(1|year), data=UK_snow3) 
+summary(mod1)
+
+## April snow LMM
+mod3 <- lmer(within_site_april_snow~year+(1|year), data=UK_snow3) 
+summary(mod3) 
+
+## March-April snow LMM
+mod5 <- lmer(within_site_snowUK03_04~year+(1|year), data=UK_snow3) 
+summary(mod5) 
+
+### create plots and save as things
+## March-April
+# create df of predicted values for each year based on the glmm
+pred.mm1 <- ggpredict(mod5, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions without legend
+plot_snow_1 <- (ggplot(pred.mm1) + 
+                  geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+                  geom_point(data = UK_snow3, aes(x = year, y = within_site_snowUK03_04, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                              fill = "lightgrey", alpha = 0.5) +  # error band
+                  labs(x = "", y = "\n Snow-lying days", title = "") + 
+                  theme_classic() +
+                  labs(color = "Site") +
+                  scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## March snow
+# create df of predicted values for each year based on the glmm
+pred.mm2 <- ggpredict(mod1, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_snow_2 <- (ggplot(pred.mm2) + 
+                  geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+                  geom_point(data = UK_snow3, aes(x = year, y = within_site_march_snow, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                              fill = "lightgrey", alpha = 0.5) +  # error band
+                  labs(x = "", y = "", title = "") + 
+                  theme_classic() +
+                  theme(legend.position="none") +
+                  scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## April snow
+# create df of predicted values for each year based on the glmm
+pred.mm3 <- ggpredict(mod3, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_snow_3 <- (ggplot(pred.mm3) + 
+                  geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+                  geom_point(data = UK_snow3, aes(x = year, y = within_site_april_snow, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                              fill = "lightgrey", alpha = 0.5) +  # error band
+                  labs(x = "", y = "", title = "") + 
+                  theme_classic() +
+                  theme(legend.position="none") +
+                  scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+slope1 <- pred.mm1$predicted[18] - pred.mm1$predicted[1]
+slope2 <- pred.mm2$predicted[18] - pred.mm2$predicted[1]
+slope3 <- pred.mm3$predicted[18] - pred.mm3$predicted[1]
+
+####################################
+
+##### UK minimum temperature 
+
+# UK_tmin<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/UK_tmin.xlsx")
+UK_tmin<-read_excel("~/Dropbox/1. DISS/Sorrel/data/UK_tmin.xlsx")
+# cut Glen Effock rows and rename Glen Esk as Glen Effock & Glen Esk in figure legend, as these sites are too close together for the weather data to be independent
+UK_tmin2<-UK_tmin[-c(36:70), ] # cut rows before 1985
+# calculate between-site ppt and within-site ppt
+UK_tmin3 <- UK_tmin2 %>%
+  group_by(site) %>%
+  mutate(between_site_tminUK03_04=mean(tminUK03_04)) %>%
+  mutate(within_site_tminUK03_04=tminUK03_04-between_site_tminUK03_04) %>%
+  mutate(between_site_tminUK05_06=mean(tminUK05_06)) %>%
+  mutate(within_site_tminUK05_06=tminUK05_06-between_site_tminUK05_06) %>%
+  mutate(between_site_tminUK07_08=mean(tminUK07_08)) %>%
+  mutate(within_site_tminUK07_08=tminUK07_08-between_site_tminUK07_08)
+UK_tmin3$year <- as.numeric(UK_tmin3$year)
+
+# remove any glen_effock rows
+UK_tmin3 <- UK_tmin3[!(UK_tmin3$site=="glen_effock"),]
+
+## March-April tmin LMM
+mod1 <- lmer(within_site_tminUK03_04~year+(1|year), data=UK_tmin3) 
+summary(mod1) 
+
+## May-June tmin LMM
+mod3 <- lmer(within_site_tminUK05_06~year+(1|year), data=UK_tmin3) 
+summary(mod3) 
+
+## July-August tmin LMM
+mod5 <- lmer(within_site_tminUK07_08~year+(1|year), data=UK_tmin3) 
+summary(mod5) 
+
+### create plots and save as things
+## March-April
+# create df of predicted values for each year based on the glmm
+pred.mm1 <- ggpredict(mod1, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions without legend
+plot_tmin_1 <- (ggplot(pred.mm1) + 
+                 geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+                 geom_point(data = UK_tmin3, aes(x = year, y = within_site_tminUK03_04, colour = site), size=1) + # adding the raw data (scaled values)
+                 geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                             fill = "lightgrey", alpha = 0.5) +  # error band
+                 labs(x = "", y = "Minimum \n temperature (°C)", title = "") + 
+                 theme_classic() +
+                  labs(color = "Site") +
+                  scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## May-June
+# create df of predicted values for each year based on the glmm
+pred.mm2 <- ggpredict(mod3, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_tmin_2 <- (ggplot(pred.mm2) + 
+                 geom_line(aes(x = x, y = predicted)) + # slope         
+                 geom_point(data = UK_tmin3, aes(x = year, y = within_site_tminUK05_06, colour = site), size=1) + # adding the raw data (scaled values)
+                 geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                             fill = "lightgrey", alpha = 0.5) +  # error band
+                 labs(x = "", y = "", title = "") + 
+                 theme_classic() +
+                  theme(legend.position="none") +
+                  scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## July-August
+# create df of predicted values for each year based on the glmm
+pred.mm3 <- ggpredict(mod5, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_tmin_3 <- (ggplot(pred.mm3) + 
+                 geom_line(aes(x = x, y = predicted)) + # slope         
+                 geom_point(data = UK_tmin3, aes(x = year, y = within_site_tminUK07_08, colour = site), size=1) + # adding the raw data (scaled values)
+                 geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                             fill = "lightgrey", alpha = 0.5) +  # error band
+                 labs(x = "", y = "", title = "") + 
+                 theme_classic() +
+                  theme(legend.position="none") +
+                  scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+slope1 <- pred.mm1$predicted[18] - pred.mm1$predicted[1]
+slope2 <- pred.mm2$predicted[18] - pred.mm2$predicted[1]
+slope3 <- pred.mm3$predicted[18] - pred.mm3$predicted[1]
+
+####################################
+
+##### UK mean temperature 
+
+# UK_tmean<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/UK_tmean.xlsx")
+UK_tmean<-read_excel("~/Dropbox/1. DISS/Sorrel/data/UK_tmean.xlsx")
+# cut Glen Effock rows and rename Glen Esk as Glen Effock & Glen Esk in figure legend, as these sites are too close together for the weather data to be independent
+UK_tmean2<-UK_tmean[-c(36:70), ] # cut rows before 1985
+# calculate between-site ppt and within-site ppt
+UK_tmean3 <- UK_tmean2 %>%
+  group_by(site) %>%
+  mutate(between_site_tmeanUK03_04=mean(tmeanUK03_04)) %>%
+  mutate(within_site_tmeanUK03_04=tmeanUK03_04-between_site_tmeanUK03_04) %>%
+  mutate(between_site_tmeanUK05_06=mean(tmeanUK05_06)) %>%
+  mutate(within_site_tmeanUK05_06=tmeanUK05_06-between_site_tmeanUK05_06) %>%
+  mutate(between_site_tmeanUK07_08=mean(tmeanUK07_08)) %>%
+  mutate(within_site_tmeanUK07_08=tmeanUK07_08-between_site_tmeanUK07_08)
+UK_tmean3$year <- as.numeric(UK_tmean3$year)
+
+# remove any glen_effock rows
+UK_tmean3 <- UK_tmean3[!(UK_tmean3$site=="glen_effock"),]
+
+## March-April tmean LMM
+mod1 <- lmer(within_site_tmeanUK03_04~year+(1|year), data=UK_tmean3) 
+summary(mod1) 
+
+## May-June tmean LMM
+mod3 <- lmer(within_site_tmeanUK05_06~year+(1|year), data=UK_tmean3) 
+summary(mod3) 
+
+## July-August tmean LMM
+mod5 <- lmer(within_site_tmeanUK07_08~year+(1|year), data=UK_tmean3) 
+summary(mod5) 
+
+### create plots and save as things
+## March-April
+# create df of predicted values for each year based on the glmm
+pred.mm1 <- ggpredict(mod1, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions without legend
+plot_tmean_1 <- (ggplot(pred.mm1) + 
+                  geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+                  geom_point(data = UK_tmean3, aes(x = year, y = within_site_tmeanUK03_04, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                              fill = "lightgrey", alpha = 0.5) +  # error band
+                  labs(x = "", y = "Mean \n temperature (°C)", title = "") + 
+                  theme_classic() +
+                   labs(color = "Site") +
+                   scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## May-June
+# create df of predicted values for each year based on the glmm
+pred.mm2 <- ggpredict(mod3, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_tmean_2 <- (ggplot(pred.mm2) + 
+                  geom_line(aes(x = x, y = predicted)) + # slope         
+                  geom_point(data = UK_tmean3, aes(x = year, y = within_site_tmeanUK05_06, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                              fill = "lightgrey", alpha = 0.5) +  # error band
+                  labs(x = "", y = "", title = "") + 
+                  theme_classic() +
+                   theme(legend.position="none") +
+                   scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## July-August
+# create df of predicted values for each year based on the glmm
+pred.mm3 <- ggpredict(mod5, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_tmean_3 <- (ggplot(pred.mm3) + 
+                  geom_line(aes(x = x, y = predicted)) + # slope         
+                  geom_point(data = UK_tmean3, aes(x = year, y = within_site_tmeanUK07_08, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                              fill = "lightgrey", alpha = 0.5) +  # error band
+                  labs(x = "", y = "", title = "") + 
+                  theme_classic() +
+                   theme(legend.position="none") +
+                   scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+slope1 <- pred.mm1$predicted[18] - pred.mm1$predicted[1]
+slope2 <- pred.mm2$predicted[18] - pred.mm2$predicted[1]
+slope3 <- pred.mm3$predicted[18] - pred.mm3$predicted[1]
+
+####################################
+
+##### UK maximum temperature 
+
+# UK_tmax<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/UK_tmax.xlsx")
+UK_tmax<-read_excel("~/Dropbox/1. DISS/Sorrel/data/UK_tmax.xlsx")
+# cut Glen Effock rows and rename Glen Esk as Glen Effock & Glen Esk in figure legend, as these sites are too close together for the weather data to be independent
+UK_tmax2<-UK_tmax[-c(36:70), ] # cut rows before 1985
+# calculate between-site ppt and within-site ppt
+UK_tmax3 <- UK_tmax2 %>%
+  group_by(site) %>%
+  mutate(between_site_tmaxUK03_04=mean(tmaxUK03_04)) %>%
+  mutate(within_site_tmaxUK03_04=tmaxUK03_04-between_site_tmaxUK03_04) %>%
+  mutate(between_site_tmaxUK05_06=max(tmaxUK05_06)) %>%
+  mutate(within_site_tmaxUK05_06=tmaxUK05_06-between_site_tmaxUK05_06) %>%
+  mutate(between_site_tmaxUK07_08=max(tmaxUK07_08)) %>%
+  mutate(within_site_tmaxUK07_08=tmaxUK07_08-between_site_tmaxUK07_08)
+UK_tmax3$year <- as.numeric(UK_tmax3$year)
+
+# remove any glen_effock rows
+UK_tmax3 <- UK_tmax3[!(UK_tmax3$site=="glen_effock"),]
+
+## March-April tmax LMM
+mod1 <- lmer(within_site_tmaxUK03_04~year+(1|year), data=UK_tmax3) 
+summary(mod1) 
+
+## May-June tmax LMM
+mod3 <- lmer(within_site_tmaxUK05_06~year+(1|year), data=UK_tmax3) 
+summary(mod3) 
+
+## July-August tmax LMM
+mod5 <- lmer(within_site_tmaxUK07_08~year+(1|year), data=UK_tmax3) 
+summary(mod5) 
+
+### create plots and save as things
+## March-April
+# create df of predicted values for each year based on the glmm
+pred.mm1 <- ggpredict(mod1, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+# plot the predictions without legend
+plot_tmax_1 <- (ggplot(pred.mm1) + 
+                  geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+                  geom_point(data = UK_tmax3, aes(x = year, y = within_site_tmaxUK03_04, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                              fill = "lightgrey", alpha = 0.5) +  # error band
+                  labs(x = "", y = "Maximum \n temperature (°C)", title = "") + 
+                  theme_classic() +
+                  labs(color = "Site") +
+                  scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## May-June
+# create df of predicted values for each year based on the glmm
+pred.mm2 <- ggpredict(mod3, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_tmax_2 <- (ggplot(pred.mm2) + 
+                  geom_line(aes(x = x, y = predicted)) + # slope         
+                  geom_point(data = UK_tmax3, aes(x = year, y = within_site_tmaxUK05_06, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                              fill = "lightgrey", alpha = 0.5) +  # error band
+                  labs(x = "", y = "", title = "") + 
+                  theme_classic() +
+                  theme(legend.position="none") +
+                  scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+## July-August
+# create df of predicted values for each year based on the glmm
+pred.mm3 <- ggpredict(mod5, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_tmax_3 <- (ggplot(pred.mm3) + 
+                  geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+                  geom_point(data = UK_tmax3, aes(x = year, y = within_site_tmaxUK07_08, colour = site), size=1) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                              fill = "lightgrey", alpha = 0.5) +  # error band
+                  labs(x = "", y = "", title = "") + 
+                  theme_classic() +
+                  theme(legend.position="none") +
+                  scale_color_manual(values=c("#4477AA", "#CCBB44", "#EE6677", "#228833", "#AA3377"))
+)
+
+slope1 <- pred.mm1$predicted[18] - pred.mm1$predicted[1]
+slope2 <- pred.mm2$predicted[18] - pred.mm2$predicted[1]
+slope3 <- pred.mm3$predicted[18] - pred.mm3$predicted[1]
+
+##########################################################################
+
+###### PLOT ALL UK CLIMATE VARIABLES TOGETHER ######
+### ppt, tmin, tmax, tmean and snow
+
+UK_clim_plot1 <- plot_grid(center=textGrob("March-April", hjust = .1, gp=gpar(fontsize=11)), # time period labels
+                            plot_ppt_1 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0.3), "cm")), 
+                            plot_tmin_1 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0.3), "cm")),
+                            plot_tmax_1 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0.3), "cm")),
+                            plot_tmean_1 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0.3), "cm")),
+                            center=textGrob("March-April", hjust = .1, gp=gpar(fontsize=11)),
+                            plot_snow_1 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0.3), "cm")),
+                            labels = c("", "(a)", "(d)", "(g)", "(j)", "", "(m)"), label_size = 10,
+                            rel_heights = c(0.5,3,3,3,3,0.5,3),
+                            ncol=1)
+
+UK_clim_plot2 <- plot_grid(center=textGrob("May-June", hjust = .1, gp=gpar(fontsize=11)), # time period labels
+                             plot_ppt_2 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")), 
+                             plot_tmin_2 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                             plot_tmax_2 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                             plot_tmean_2 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                             center=textGrob("March", hjust = .1, gp=gpar(fontsize=11)),
+                             plot_snow_2 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                             labels = c("", "(b)", "(e)", "(h)", "(k)", "", "(n)"), label_size = 10,
+                             rel_heights = c(0.5,3,3,3,3,0.5,3),
+                             ncol=1)
+
+UK_clim_plot3 <- plot_grid(center=textGrob("July-August", hjust = .1, gp=gpar(fontsize=11)), # time period labels
+                             plot_ppt_3 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")), 
+                             plot_tmin_3 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                             plot_tmax_3 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                             plot_tmean_3 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                             center=textGrob("April", hjust = .1, gp=gpar(fontsize=11)),
+                             plot_snow_3 + theme(legend.position="none") + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                             labels = c("", "(c)", "(f)", "(i)", "(l)", "", "(o)"), label_size = 10,
+                             rel_heights = c(0.5,3,3,3,3,0.5,3),
+                             ncol=1)
+
+UK_clim_plot.all <- plot_grid(UK_clim_plot1,
+                              top=textGrob(""),
+                              UK_clim_plot2,
+                              top=textGrob(""),
+                              UK_clim_plot3,
+                              top=textGrob(""),
+                              ncol=6,
+                              rel_widths = c(3.2,.1,3,.1,3,.3))
+
+UK_clim_plot.all2 <- plot_grid(UK_clim_plot.all,
+                               top=textGrob("Year"),
+                               nrow=2, rel_heights = c(30,0.5))
+
+# extract legend
+get_only_legend <- function(myggp) {
+  step1 <- ggplot_gtable(ggplot_build(myggp))
+  step2 <- which(sapply(step1$grobs, function(x) x$name) == "guide-box")
+  step3 <- step1$grobs[[step2]]
+  return(step3)
+}
+
+shared_legend <- get_legend(
+  plot_ppt_legend +
+    guides(color=guide_legend(nrow=1)) +
+    theme(legend.position = "bottom")
+)
+
+UK_clim_plot <- plot_grid(UK_clim_plot.all2, shared_legend, ncol=1, rel_heights = c(1, .05))
+UK_clim_plot

@@ -28,7 +28,7 @@ lag_pptAT03_05.df <- pptAT03_05.df2 %>%
 lag_pptAT03_05.df$year <- as.numeric(lag_pptAT03_05.df$year) # convert year from character to numeric variable
 colnames(lag_pptAT03_05.df) <- c("year", "lag1_pptAT03_05", "lag2_pptAT03_05") # change column names
 
-### November-February precipitation (lag1)
+### November-February precipitation (lag1) 
 # pptAT11_02<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptAT11_02.xlsx")
 pptAT11_02<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/Atlas_climate/pptAT11_02.xlsx")
 pptAT11_02.df <- separate(pptAT11_02, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day

@@ -1,0 +1,365 @@
+## load packages
+library("readxl")
+library(dplyr)
+library(lme4)
+library(lmerTest)
+library(ggeffects) # to plot glmm effects
+library(ggplot2)
+library(tidyverse) 
+library(DHARMa) # to diagnose glmms
+library(sjPlot)
+library(sjmisc)
+library(glmmTMB)
+library(TMB)
+
+###############################################################################
+
+################ Atlas climate variables #################
+
+
+# RZ_AT_climate<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/RZ_ATclimate.xlsx")
+RZ_AT_climate<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_ATclimate.xlsx")
+
+## create new variable with Glen Effock and Glen Esk labelled as the same site, as these sites are too close together to be independent
+RZ_AT_climate2 <- RZ_AT_climate
+RZ_AT_climate2$TO_site_id <- RZ_AT_climate2$site # create a new column called site_id and use a base column to change in subsequent code
+RZ_AT_climate2$TO_site_id[RZ_AT_climate2$site=="glen_effock"] <- "glen_effock_esk" # if site is glen_effock, put 'glen_effock_esk' in the new site_id column
+RZ_AT_climate2$TO_site_id[RZ_AT_climate2$site=="glen_esk"] <- "glen_effock_esk" # if site is glen_esk, put 'glen_effock_esk' in the new site_id column
+# remove na rows
+RZ_AT_climate3<-subset(RZ_AT_climate2,is.na(lag1_pptAT03_05)==FALSE)
+
+## histogram of territory_occupancy data
+hist(RZ_AT_climate3$territory_occupancy) 
+# data fits normal (Gaussian) distribution --> use LMMs not Poisson GLMMs
+
+## LMM structure
+# y = territory_occupancy
+# fixed effects = year + clim_var
+# random effects = site
+# only test for interaction between site and clim_var if the clim_var effect is significant
+
+#########################################
+
+### March-May precipitation the year before breeding (lag1_pptAT03_05) LMM
+
+# LMM with year and site random effects
+lag1_pptAT03_05.lmm1 <- lmer(territory_occupancy~scale(year)+lag1_pptAT03_05+(1|year)+(1|TO_site_id), data=RZ_AT_climate3)
+summary(lag1_pptAT03_05.lmm1) 
+
+### March-May precipitation two years before breeding (lag2_pptAT03_05) LMM
+
+# LMM with year and site random effects
+lag2_pptAT03_05.lmm1 <- lmer(territory_occupancy~scale(year)+lag2_pptAT03_05+(1|year)+(1|TO_site_id), data=RZ_AT_climate3)
+summary(lag2_pptAT03_05.lmm1)
+
+### November-February precipitation the year before breeding (lag1_pptAT11_02) LMM
+
+# LMM with year and site random effects
+lag1_pptAT11_02.lmm1 <- lmer(territory_occupancy~scale(year)+lag1_pptAT11_02+(1|year)+(1|TO_site_id), data=RZ_AT_climate3)
+summary(lag1_pptAT11_02.lmm1)
+
+### November-February minimum temperature the year before breeding (lag1_tminAT11_02) LMM
+
+# LMM with year and site random effects
+lag1_tminAT11_02.lmm1 <- lmer(territory_occupancy~scale(year)+lag1_tminAT11_02+(1|year)+(1|TO_site_id), data=RZ_AT_climate3)
+summary(lag1_tminAT11_02.lmm1)
+
+### November-February maximum temperature the year before breeding (lag1_tminAT11_02) LMM
+
+# LMM with year and site random effects
+lag1_tmaxAT11_02.lmm1 <- lmer(territory_occupancy~scale(year)+lag1_tmaxAT11_02+(1|year)+(1|TO_site_id), data=RZ_AT_climate3)
+summary(lag1_tmaxAT11_02.lmm1)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_pptAT03_05.lmm1)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## using sjPlot package
+plot_model(lag1_pptAT03_05.lmm1, type = "diag") # random effect QQ-plot
+# diagnostics look fine
+
+
+###############################################################################
+
+################ UK climate variables #################
+
+####################################################################
+####################################################################
+
+########### UK ppt ###########
+
+RZ_UK_ppt<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_ppt2.xlsx")
+
+## create new variable with Glen Effock and Glen Esk labelled as the same site, as these sites are too close together to be independent
+RZ_UK_ppt$TO_site_id <- RZ_UK_ppt$site # create a new column called site_id and use a base column to change in subsequent code
+RZ_UK_ppt$TO_site_id[RZ_UK_ppt$site=="glen_effock"] <- "glen_effock_esk" # if site is glen_effock, put 'glen_effock_esk' in the new site_id column
+RZ_UK_ppt$TO_site_id[RZ_UK_ppt$site=="glen_esk"] <- "glen_effock_esk" # if site is glen_esk, put 'glen_effock_esk' in the new site_id column
+RZ_UK_ppt2<-subset(RZ_UK_ppt,is.na(territory_occupancy)==FALSE)
+
+# remove na rows
+RZ_UK_ppt4<-subset(RZ_UK_ppt2,is.na(pptUK03_04)==FALSE)
+colnames(RZ_UK_ppt4) <- c("site", "year", "territory_occupancy", "early_nests", "second_broods", 
+                          "mean_first_egg", "mean_first_egg_late", "earliest_first_egg", "Mayfield_ns_early",
+                          "Mayfield_ns_late", "nests_monitored", "successful_nests", 
+                          "within_site_pptUK03_04", "within_site_pptUK05_06", "within_site_lag1_pptUK07_08", "TO_site_id") 
+
+## histogram of territory_occupancy data
+hist(RZ_UK_ppt4$territory_occupancy) 
+# data fits normal (Gaussian) distribution --> use LMMs not Poisson GLMMs
+
+##########################################
+
+##### March-April ppt (within_site_pptUK03_04)
+
+# LMM with year and site random effects
+pptUK03_04.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_pptUK03_04+(1|year)+(1|TO_site_id), data=RZ_UK_ppt4)
+summary(pptUK03_04.lmm1) 
+
+##### May-June ppt (within_site_pptUK05_06)
+
+# LMM with year and site random effects
+pptUK05_06.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_pptUK05_06+(1|year)+(1|TO_site_id), data=RZ_UK_ppt4)
+summary(pptUK05_06.lmm1)
+
+##### July-August ppt the year before breeding (within_site_lag1_pptUK07_08)
+
+# LMM with year and site random effects
+lag1_pptUK07_08.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_lag1_pptUK07_08+(1|year)+(1|TO_site_id), data=RZ_UK_ppt4)
+summary(lag1_pptUK07_08.lmm1)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_pptUK07_08.lmm1)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(lag1_pptUK07_08.lmm1, type = "diag") # random effect QQ-plot
+## assumptions satisfied
+
+####################################################################
+####################################################################
+
+########### UK snow ###########
+
+RZ_UK_snow<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_snow3.xlsx")
+
+## create new variable with Glen Effock and Glen Esk labelled as the same site, as these sites are too close together to be independent
+RZ_UK_snow$TO_site_id <- RZ_UK_snow$site # create a new column called site_id and use a base column to change in subsequent code
+RZ_UK_snow$TO_site_id[RZ_UK_snow$site=="glen_effock"] <- "glen_effock_esk" # if site is glen_effock, put 'glen_effock_esk' in the new site_id column
+RZ_UK_snow$TO_site_id[RZ_UK_snow$site=="glen_esk"] <- "glen_effock_esk" # if site is glen_esk, put 'glen_effock_esk' in the new site_id column
+RZ_UK_snow4<-subset(RZ_UK_snow,is.na(territory_occupancy)==FALSE)
+RZ_UK_snow4<-subset(RZ_UK_snow,is.na(within_site_snowUK03_04)==FALSE)
+
+##### March-April snow (within_site_snowUK03_04)
+
+# LMM with year and site random effects
+snowUK03_04.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_snowUK03_04+(1|year)+(1|TO_site_id), data=RZ_UK_snow4)
+summary(snowUK03_04.lmm1) 
+
+##### March snow (within_site_march_snow)
+
+# LMM with year and site random effects
+snowUK03.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_march_snow+(1|year)+(1|TO_site_id), data=RZ_UK_snow4)
+summary(snowUK03.lmm1) 
+
+##### April snow (within_site_april_snow)
+
+# LMM with year and site random effects
+snowUK04.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_april_snow+(1|year)+(1|TO_site_id), data=RZ_UK_snow4)
+summary(snowUK04.lmm1) 
+# remove year random effect as variance is very small
+snowUK04.lmm2 <- lmer(territory_occupancy~scale(year)+within_site_april_snow+(1|TO_site_id), data=RZ_UK_snow4)
+summary(snowUK04.lmm2) 
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_pptUK07_08.lmm1)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(lag1_pptUK07_08.lmm1, type = "diag") # random effect QQ-plot
+## assumptions satisfied
+
+
+####################################################################
+####################################################################
+
+########### UK tmin ###########
+
+RZ_UK_tmin<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmin2.xlsx")
+
+RZ_UK_tmin2<-subset(RZ_UK_tmin,is.na(territory_occupancy)==FALSE)
+RZ_UK_tmin4<-subset(RZ_UK_tmin2,is.na(tminUK03_04)==FALSE)
+colnames(RZ_UK_tmin4) <- c("site", "year", "territory_occupancy", "early_nests", "second_broods", 
+                           "mean_first_egg", "mean_first_egg_late", "earliest_first_egg", "Mayfield_ns_early",
+                           "Mayfield_ns_late", "nests_monitored", "successful_nests", 
+                           "within_site_tminUK03_04", "within_site_tminUK05_06", "within_site_lag1_tminUK07_08")
+                           
+RZ_UK_tmin4$TO_site_id <- RZ_UK_tmin4$site # create a new column called site_id and use a base column to change in subsequent code
+RZ_UK_tmin4$TO_site_id[RZ_UK_tmin4$site=="glen_effock"] <- "glen_effock_esk" # if site is glen_effock, put 'glen_effock_esk' in the new site_id column
+RZ_UK_tmin4$TO_site_id[RZ_UK_tmin4$site=="glen_esk"] <- "glen_effock_esk" # if site is glen_esk, put 'glen_effock_esk' in the new site_id column
+
+##### March-April tmin (within_site_tminUK03_04)
+
+# LMM with year and site random effects
+tminUK03_04.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_tminUK03_04+(1|year)+(1|TO_site_id), data=RZ_UK_tmin4)
+summary(tminUK03_04.lmm1) 
+
+##### May-June tmin (within_site_tminUK05_06)
+
+# LMM with year and site random effects
+tminUK05_06.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_tminUK05_06+(1|year)+(1|TO_site_id), data=RZ_UK_tmin4)
+summary(tminUK05_06.lmm1)
+
+##### July-August tmin the year before breeding (within_site_lag1_tminUK07_08)
+
+# LMM with year and site random effects
+lag1_tminUK07_08.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_lag1_tminUK07_08+(1|year)+(1|TO_site_id), data=RZ_UK_tmin4)
+summary(lag1_tminUK07_08.lmm1)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_tminUK07_08.lmm1)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(lag1_tminUK07_08.lmm1, type = "diag") # random effect QQ-plot
+## assumptions satisfied
+
+####################################################################
+####################################################################
+
+########### UK tmean ###########
+
+RZ_UK_tmean<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmean2.xlsx")
+
+RZ_UK_tmean2<-subset(RZ_UK_tmean,is.na(territory_occupancy)==FALSE)
+RZ_UK_tmean4<-subset(RZ_UK_tmean2,is.na(tmeanUK03_04)==FALSE)
+colnames(RZ_UK_tmean4) <- c("site", "year", "territory_occupancy", "early_nests", "second_broods", 
+                           "mean_first_egg", "mean_first_egg_late", "earliest_first_egg", "Mayfield_ns_early",
+                           "Mayfield_ns_late", "nests_monitored", "successful_nests", 
+                           "within_site_tmeanUK03_04", "within_site_tmeanUK05_06", "within_site_lag1_tmeanUK07_08")
+
+RZ_UK_tmean4$TO_site_id <- RZ_UK_tmean4$site # create a new column called site_id and use a base column to change in subsequent code
+RZ_UK_tmean4$TO_site_id[RZ_UK_tmean4$site=="glen_effock"] <- "glen_effock_esk" # if site is glen_effock, put 'glen_effock_esk' in the new site_id column
+RZ_UK_tmean4$TO_site_id[RZ_UK_tmean4$site=="glen_esk"] <- "glen_effock_esk" # if site is glen_esk, put 'glen_effock_esk' in the new site_id column
+
+##### March-April tmean (within_site_tmeanUK03_04)
+
+# LMM with year and site random effects
+tmeanUK03_04.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_tmeanUK03_04+(1|year)+(1|TO_site_id), data=RZ_UK_tmean4)
+summary(tmeanUK03_04.lmm1) 
+
+##### May-June tmean (within_site_tmeanUK05_06)
+
+# LMM with year and site random effects
+tmeanUK05_06.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_tmeanUK05_06+(1|year)+(1|TO_site_id), data=RZ_UK_tmean4)
+summary(tmeanUK05_06.lmm1)
+
+##### July-August tmean the year before breeding (within_site_lag1_tmeanUK07_08)
+
+# LMM with year and site random effects
+lag1_tmeanUK07_08.lmm1 <- lmer(territory_occupancy~scale(year)+within_site_lag1_tmeanUK07_08+(1|year)+(1|TO_site_id), data=RZ_UK_tmean4)
+summary(lag1_tmeanUK07_08.lmm1)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = tmeanUK03_04.lmm1)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(tmeanUK03_04.lmm1, type = "diag") # random effect QQ-plot
+## assumptions satisfied
+
+########### UK tmax ###########
+
+RZ_UK_tmax<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmax2.xlsx")
+
+## create new variable with Glen Effock and Glen Esk labelled as the same site, as these sites are too close together to be independent
+RZ_UK_tmax$TO_site_id <- RZ_UK_tmax$site # create a new column called site_id and use a base column to change in subsequent code
+RZ_UK_tmax$TO_site_id[RZ_UK_tmax$site=="glen_effock"] <- "glen_effock_esk" # if site is glen_effock, put 'glen_effock_esk' in the new site_id column
+RZ_UK_tmax$TO_site_id[RZ_UK_tmax$site=="glen_esk"] <- "glen_effock_esk" # if site is glen_esk, put 'glen_effock_esk' in the new site_id column
+RZ_UK_tmax3<-subset(RZ_UK_tmax,is.na(territory_occupancy)==FALSE)
+
+# remove na rows
+RZ_UK_tmax4<-subset(RZ_UK_tmax3,is.na(tmaxUK03_04)==FALSE)
+
+##### March-April tmax (within_site_tmaxUK03_04)
+
+# LMM with year and site random effects
+tmaxUK03_04.lmm1 <- lmer(territory_occupancy~scale(year)+tmaxUK03_04+(1|year)+(1|TO_site_id), data=RZ_UK_tmax4)
+summary(tmaxUK03_04.lmm1) 
+
+##### May-June tmax (within_site_tmaxUK05_06)
+
+# LMM with year and site random effects
+tmaxUK05_06.lmm1 <- lmer(territory_occupancy~scale(year)+tmaxUK05_06+(1|year)+(1|TO_site_id), data=RZ_UK_tmax4)
+summary(tmaxUK05_06.lmm1)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = tmaxUK05_06.lmm1)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(tmaxUK05_06.lmm1, type = "diag") # random effect QQ-plot
+## assumptions satisfied
+
+##### July-August tmax the year before breeding (within_site_lag1_tmaxUK07_08)
+
+# LMM with year and site random effects
+lag1_tmaxUK07_08.lmm1 <- lmer(territory_occupancy~scale(year)+lag1_tmaxUK07_08+(1|year)+(1|TO_site_id), data=RZ_UK_tmax4)
+summary(lag1_tmaxUK07_08.lmm1)
+
+###############################################################################
+
+################ spring NAO index #################
+
+RZ_NAO<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_NAO.xlsx")
+
+## create new variable with Glen Effock and Glen Esk labelled as the same site, as these sites are too close together to be independent
+RZ_NAO$TO_site_id <- RZ_NAO$site # create a new column called site_id and use a base column to change in subsequent code
+RZ_NAO$TO_site_id[RZ_NAO$site=="glen_effock"] <- "glen_effock_esk" # if site is glen_effock, put 'glen_effock_esk' in the new site_id column
+RZ_NAO$TO_site_id[RZ_NAO$site=="glen_esk"] <- "glen_effock_esk" # if site is glen_esk, put 'glen_effock_esk' in the new site_id column
+RZ_NAO2<-subset(RZ_NAO,is.na(territory_occupancy)==FALSE) # remove TO na rows
+
+##### March-May NAO (NAO_03_05)
+
+# LMM with year and site random effects
+NAO_03_05.lmm1 <- lmer(territory_occupancy~scale(year)+NAO_03_05+(1|year)+(1|TO_site_id), data=RZ_NAO2)
+summary(NAO_03_05.lmm1) 
+# variance of year random effect is zero and producing warning message
+# remove year random effect
+NAO_03_05.lmm2 <- lmer(territory_occupancy~scale(year)+NAO_03_05+(1|TO_site_id), data=RZ_NAO2)
+summary(NAO_03_05.lmm2)
+# drop fixed effects
+NAO_03_05.lmm3 <- lmer(territory_occupancy~(1|TO_site_id), data=RZ_NAO2)
+# compare models
+anova(NAO_03_05.lmm2, NAO_03_05.lmm3) # no effect of year+clim_var
+# compare model with just clim_var and TO to model without fixed effects
+NAO_03_05.lmm4 <- lmer(territory_occupancy~NAO_03_05+(1|TO_site_id), data=RZ_NAO2)
+anova(NAO_03_05.lmm4, NAO_03_05.lmm2) # no effect of clim_var
+
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = lag1_pptUK07_08.lmm1)
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+## assumptions tests results
+## using sjPlot package
+plot_model(lag1_pptUK07_08.lmm1, type = "diag") # random effect QQ-plot
+## assumptions satisfied

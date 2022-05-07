@@ -1,0 +1,40 @@
+rm(list=ls())
+### in this code:
+## calculation of apparent nest success (ANS) for Glen Clunie (GC)
+# in GC_success df, 0 = success at either egg or chick stage, 1 = failure
+
+library("readxl")
+# breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/GC_ANS_calcs.xlsx")
+GC_success<-read_excel("~/Dropbox/1. DISS/Sorrel/data/GC_ANS_calcs.xlsx")
+library(dplyr)
+library(cli)
+
+## remove rows that are blank in both egg success and chick success columns, as these contain instances where fledglings were found but the nests was not found at the egg or chick stage
+GC_success_omitted <- GC_success[!with(GC_success,is.na(egg_success)& is.na(chick_success)),]
+
+## create new column in GC_success_omitted called total_success with success or fail combined for egg or chick success
+GC_success_omitted$total_success <- GC_success_omitted$egg_success # create a new column called total_success and use a base column to change in subsequent code
+GC_success_omitted$total_success[GC_success_omitted$egg_success==1] <- "fail" # if egg success is 1 (fail), put 'fail' in the new total_success column
+GC_success_omitted$total_success[GC_success_omitted$chick_success==1] <- "fail" # if chick success is 1 (fail), put 'fail' in the new total_success column
+GC_success_omitted$total_success[GC_success_omitted$egg_success==0] <- "success" # if egg success is 0 (success), put 'success' in the new total_success column
+GC_success_omitted$total_success[GC_success_omitted$chick_success==0] <- "success" # if egg success is 0 (success), put 'success' in the new total_success column
+
+## create new dataframe with counts of total nests monitored and total success each year
+# create new dataframe with total number of nests monitored each year
+total_nests.df <- GC_success_omitted %>%
+  group_by(year) %>%
+  summarise(total_nests = n())
+# create new dataframe with total number of successful nests found at either egg or chick stage each year
+successful_nests.df <- GC_success_omitted %>%
+  group_by(year) %>%
+  mutate(successful_nests=sum(total_success=="success")) %>%
+  slice(1) %>%
+  select(year, successful_nests)
+# merge the two above dataframes and calculate a proportion of successful nests / total nests each year (ANS)
+nest_success.df <- total_nests.df %>%
+  left_join(successful_nests.df, by='year') %>%
+  mutate(ANS=successful_nests/total_nests)
+
+#export nest_success.df to excel document
+library("writexl")
+write_xlsx(nest_success.df, "~/Dropbox/1. DISS/Sorrel/data/GC_apparent_NS.xlsx")

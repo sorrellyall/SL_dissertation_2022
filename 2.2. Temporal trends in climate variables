@@ -685,3 +685,41 @@ shared_legend <- get_legend(
 
 UK_clim_plot <- plot_grid(UK_clim_plot.all2, shared_legend, ncol=1, rel_heights = c(1, .05))
 UK_clim_plot
+
+
+
+#####################################################
+
+########### spring NAO index #############
+
+# NAO<-read.table("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/nao.dat.txt")
+NAO<-read.table("~/Dropbox/1. DISS/Sorrel/data/climate_data/nao.dat.txt", header=FALSE)
+colnames(NAO) <- c("year", "jan_NAO", "feb_NAO", "march_NAO", "april_NAO", "may_NAO", "june_NAO", "july_NAO", "aug_NAO", "sept_NAO", "oct_NAO", "nov_NAO", "dec_NAO", "annual_NAO")
+# missing values = -99.99
+NAO2<-NAO[-c(1:164), ] # cut rows before 1985
+
+## calculate mean NAO index for spring months
+spring_NAO <- NAO2 %>%
+  rowwise() %>%
+  mutate(NAO_03_05 = mean(c(march_NAO,april_NAO, may_NAO))) %>%
+  select(year, NAO_03_05)
+
+## LM for March-May NAO index
+NAO_03_05_mod <- lm(NAO_03_05~year, data=spring_NAO)
+summary(NAO_03_05_mod)
+
+## model diagnostics
+par(mfrow=c(2,2))
+plot(NAO_03_05_mod)
+
+## plot with ggplot
+pred.mm1 <- ggpredict(NAO_03_05_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p1 <- (ggplot(pred.mm1) + 
+         geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+         geom_point(data = spring_NAO, aes(x = year, y = NAO_03_05)) + # adding the raw data (scaled values)
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "", y = "March-May NAO Index", title = "") + 
+         theme_classic()
+)

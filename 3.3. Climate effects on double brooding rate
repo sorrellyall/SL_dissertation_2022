@@ -2,10 +2,599 @@
 
 ############### Atlas climate variables ################
 
+## load packages
+library("readxl")
+library(dplyr)
+library(lme4)
+library(ggeffects) # to plot glmm effects
+library(ggplot2)
+library(tidyverse) 
+library(DHARMa) # to diagnose glmms
+library(sjPlot)
+library(sjmisc)
+library(glmmTMB)
+library(TMB)
+library(ggiraphExtra) 
+library(interactions)
+library(broom)
+library(broom.mixed)
+library(stargazer)
+
+# RZ_AT_climate<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/RZ_ATclimate.xlsx")
+RZ_AT_climate<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_ATclimate.xlsx")
+
+##### All AT clim vars and double brooding rate
+## dataframe manipulation
+RZ_dbr_df <- RZ_AT_climate %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
+  select(site, year, early_nests, second_broods, lag1_pptAT03_05, lag2_pptAT03_05, lag1_pptAT11_02, lag1_tminAT11_02, lag1_tmaxAT11_02) %>% # select only the columns site, year and dbr
+  na.omit(RZ_AT_climate) # remove all rows with NA
+# create column with observation number to fit observation level random effect
+RZ_dbr_df$obs<-seq(nrow(RZ_dbr_df))
+
+###################################
+###################################
+
+### lag1_pptAT03_05 glmm
+
+## glmm with site:year interaction
+DBR_lag1_pptAT03_05.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                scale(year):site+lag1_pptAT03_05+
+                                (1|year)+(1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_pptAT03_05.glmm1) # no effect of climate variable on DBR
+## glmm without year as a random effect as variance is very small
+DBR_lag1_pptAT03_05.glmm2 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                     scale(year):site+lag1_pptAT03_05+
+                                     (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_pptAT03_05.glmm2) # no effect of climate variable on DBR
+
+## glmm without site:year interaction
+DBR_lag1_pptAT03_05.glmm3 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                     lag1_pptAT03_05+
+                                     (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_pptAT03_05.glmm3) # effect of year on DBR but no effect of climate variable on DBR
+anova(DBR_lag1_pptAT03_05.glmm2, DBR_lag1_pptAT03_05.glmm3) # glmm3 has lower AIC (but not significant)
+# first model to test for an effect of clim_var on DBR = glmm3
+
+## glmm with site:clim_var interaction (without site random effect as variance very small)
+DBR_lag1_pptAT03_05.glmm4 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                     lag1_pptAT03_05+lag1_pptAT03_05:site+
+                                     (1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_pptAT03_05.glmm4) # effect of year on DBR but no effect of climate variable on DBR
+# compare models with and without site:clim_var interaction to see if interaction is significant
+anova(DBR_lag1_pptAT03_05.glmm3, DBR_lag1_pptAT03_05.glmm4) # significant interaction
+
+## glmm with site:clim_var interaction and without year
+DBR_lag1_pptAT03_05.glmm5 <- glmer(cbind(second_broods, early_nests-second_broods)~
+                                     lag1_pptAT03_05+lag1_pptAT03_05:site+
+                                     (1|obs)+(1|site), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_pptAT03_05.glmm5) # effect of year on DBR but no effect of climate variable on DBR
+# does model (with site:clim_var) fit better with or without year?
+anova(DBR_lag1_pptAT03_05.glmm4, DBR_lag1_pptAT03_05.glmm5)
+# model with year fits better (glmm4)
+
+# model without year and without interaction
+DBR_lag1_pptAT03_05.glmm6 <- glmer(cbind(second_broods, early_nests-second_broods)~
+                                     lag1_pptAT03_05+
+                                     (1|obs), data=RZ_dbr_df, family=binomial)
+anova(DBR_lag1_pptAT03_05.glmm5, DBR_lag1_pptAT03_05.glmm6) # significant interaction between site:clim_var
+
+### final models = 
+# glmm3 to test for effect of clim_var
+# glmm4 to test whether the effect of clim_var differs between sites
+
+##############################
+
+##### model diagnostics 
+
+### glmm3
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = DBR_lag1_pptAT03_05.glmm3)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## using sjPlot package
+plot_model(DBR_lag1_pptAT03_05.glmm3, type = "diag") # random effect QQ-plot
+# all diagnostics look good
+
+### glmm4
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = DBR_lag1_pptAT03_05.glmm4)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## using sjPlot package
+plot_model(DBR_lag1_pptAT03_05.glmm4, type = "diag") # random effect QQ-plot
+# all diagnostics look good
+
+##############################
+
+##### extract and back transform coefficients
+
+## for glmm3 - the effect of clim_var on dbr
+plogis_coefs1 <- plogis(DBR_lag1_pptAT03_05.glmm3@beta) 
+plogis_coefs1
+# @ instead of $ as it was an error, and 'beta' instead of 'coefficients' as it was also an error 
+# intercept estimate = 0.5142721
+# scale(year) estimate = 0.4309704
+# lag1_pptAT03_05 estimate = 0.5014062 
+# --> for every 1 mm increase in March-May Atlas precipitation the year before breeding,
+  # double brooding rate increased by 0.501%
+# --> for every 10 mm increase in March-May Atlas precipitation the year before breeding,
+# double brooding rate increased by 5% 
+
+###################################
+###################################
+
+### lag2_pptAT03_05 glmm
+
+## glmm1 to test for effect of clim_var  
+DBR_lag2_pptAT03_05.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                     lag2_pptAT03_05+
+                                     (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag2_pptAT03_05.glmm1) # effect of year on DBR but no effect of climate variable on DBR
+## glmm2 to test whether effect of clim_var is affected by site  
+DBR_lag2_pptAT03_05.glmm2 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                     lag2_pptAT03_05+lag2_pptAT03_05:site+
+                                     (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag2_pptAT03_05.glmm2) # effect of clim_var on dbr at GEF and RD differ significantly from GC
+# compare glmm1 and glmm2 to see if site interaction is significant
+anova(DBR_lag2_pptAT03_05.glmm1, DBR_lag2_pptAT03_05.glmm2) # significant interaction
+
+# back transform from log odds scale to probability
+plogis(DBR_lag2_pptAT03_05.glmm1@beta)
+
+##### model diagnostics
+### glmm1
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = DBR_lag2_pptAT03_05.glmm1)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## using sjPlot package
+plot_model(DBR_lag2_pptAT03_05.glmm1, type = "diag") # random effect QQ-plot
+# all diagnostics look good
+
+### glmm2
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = DBR_lag2_pptAT03_05.glmm2)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## using sjPlot package
+plot_model(DBR_lag2_pptAT03_05.glmm2, type = "diag") # random effect QQ-plot
+# all diagnostics look good
+
+###################################
+###################################
+
+### lag1_pptAT11_02 glmm
+
+## glmm with site:year interaction
+DBR_lag1_pptAT11_02.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                     scale(year):site+lag1_pptAT11_02+
+                                     (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_pptAT11_02.glmm1) # no effect of climate variable on DBR
+## glmm without site:year interaction
+DBR_lag1_pptAT11_02.glmm2 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                     lag1_pptAT11_02+
+                                     (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_pptAT11_02.glmm2) # effect of year on DBR but no effect of climate variable on DBR
+anova(DBR_lag1_pptAT11_02.glmm1, DBR_lag1_pptAT11_02.glmm2) # no difference in model AIC
+
+# back transform from log odds scale to probability
+plogis(DBR_lag1_pptAT11_02.glmm2@beta)
+
+###################################
+###################################
+
+### lag1_tminAT11_02 glmm
+
+## glmm with site:year interaction
+DBR_lag1_tminAT11_02.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                     scale(year):site+lag1_tminAT11_02+
+                                     (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_tminAT11_02.glmm1) # no effect of climate variable on DBR
+## glmm without site:year interaction
+DBR_lag1_tminAT11_02.glmm2 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                     lag1_tminAT11_02+
+                                     (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_tminAT11_02.glmm2) # effect of year on DBR but no effect of climate variable on DBR
+anova(DBR_lag1_tminAT11_02.glmm1, DBR_lag1_tminAT11_02.glmm2) # no difference in model AIC
+
+# back transform from log odds scale to probability
+plogis(DBR_lag1_tminAT11_02.glmm2@beta)
+
+###################################
+###################################
+
+### lag1_tmaxAT11_02 glmm
+
+## glmm with site:year interaction
+DBR_lag1_tmaxAT11_02.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                      scale(year):site+lag1_tmaxAT11_02+
+                                      (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_tmaxAT11_02.glmm1) # no effect of climate variable on DBR
+## glmm without site:year interaction
+DBR_lag1_tmaxAT11_02.glmm2 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                      lag1_tmaxAT11_02+
+                                      (1|site)+(1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_tmaxAT11_02.glmm2) # effect of year on DBR but no effect of climate variable on DBR
+anova(DBR_lag1_tmaxAT11_02.glmm1, DBR_lag1_tmaxAT11_02.glmm2) # no difference in model AIC
+
+# back transform from log odds scale to probability
+plogis(DBR_lag1_tmaxAT11_02.glmm2@beta)
+
+## glmm with site:clim_var interaction
+DBR_lag1_tmaxAT11_02.glmm3 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                      lag1_tmaxAT11_02+lag1_tmaxAT11_02:site+
+                                      (1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_tmaxAT11_02.glmm3) # effect of year on DBR but no effect of climate variable on DBR
+
+
+DBR_lag1_tmaxAT11_02.glmm4 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+site+
+                                      (1|obs), data=RZ_dbr_df, family=binomial)
+summary(DBR_lag1_tmaxAT11_02.glmm4)
+
 ###################################################################
 
 ############### UK climate variables ################
 
+######################################################################
+
+##### UK precipitation
+
+# RZ_UK_ppt<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/RZ_UK_ppt2.xlsx")
+RZ_UK_ppt<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_ppt2.xlsx")
+
+##### All AT clim vars and double brooding rate
+## create df with just double brooding and climate variables
+RZ_UK_ppt3 <- RZ_UK_ppt %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
+  select(site, year, early_nests, second_broods, pptUK03_04, pptUK05_06, lag1_pptUK07_08) %>% 
+  na.omit(RZ_UK_ppt) # remove all rows with NA
+# create column with observation number to fit observation level random effect
+RZ_UK_ppt3$obs<-seq(nrow(RZ_UK_ppt3))
+
+###################################
+###################################
+
+### within_site_pptUK03_04 glmm
+
+## glmm without site:year interaction
+DBR_pptUK03_04.glmm3 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                pptUK03_04+(1|site)+(1|obs), data=RZ_UK_ppt3, family=binomial)
+summary(DBR_pptUK03_04.glmm3) # marginal effect of year on DBR but no effect of climate variable on DBR
+anova(DBR_pptUK03_04.glmm3, DBR_pptUK03_04.glmm2) # glmm3 AIC is lower (but not significant)
+
+# back transform from log odds scale to probability
+plogis(DBR_pptUK03_04.glmm3@beta)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = DBR_pptUK03_04.glmm2)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## assumptions tests results
+# combined adjusted quantile test significant
+## using sjPlot package
+plot_model(DBR_pptUK03_04.glmm2, type = "diag") # random effect QQ-plot
+# year random effects on flat line
+
+###################################
+###################################
+
+### within_site_pptUK05_06 glmm
+
+## glmm without site:year interaction
+DBR_pptUK05_06.glmm2 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                pptUK05_06+(1|site)+(1|obs), data=RZ_UK_ppt3, family=binomial)
+summary(DBR_pptUK05_06.glmm2) # marginal effect of year on DBR but no effect of climate variable on DBR
+anova(DBR_pptUK05_06.glmm1, DBR_pptUK05_06.glmm2) # no difference in model AIC
+
+# back transform from log odds scale to probability
+plogis(DBR_pptUK05_06.glmm2@beta)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = DBR_pptUK05_06.glmm1)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## assumptions tests results
+# combined adjusted quantile test significant
+## using sjPlot package
+plot_model(DBR_pptUK05_06.glmm1, type = "diag") # random effect QQ-plot
+# year random effects on flat line
+
+###################################
+###################################
+
+### within_site_lag1_pptUK07_08 glmm
+
+## glmm without site:year interaction
+DBR_lag1_pptUK07_08.glmm2 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                lag1_pptUK07_08+
+                                (1|site)+(1|obs), data=RZ_UK_ppt3, family=binomial)
+summary(DBR_lag1_pptUK07_08.glmm2) # marginal effect of year on DBR but no effect of climate variable on DBR
+anova(DBR_lag1_pptUK07_08.glmm1, DBR_lag1_pptUK07_08.glmm2) # no difference in model AIC
+
+# back transform from log odds scale to probability
+plogis(DBR_lag1_pptUK07_08.glmm2@beta)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = DBR_lag1_pptUK07_08.glmm1)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## assumptions tests results
+# combined adjusted quantile test significant
+## using sjPlot package
+plot_model(DBR_lag1_pptUK07_08.glmm1, type = "diag") # random effect QQ-plot
+# year random effects on flat line
+
+
+
+
+######################################################################
+
+##### mean UK temperature
+
+# RZ_UK_tmean<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/RZ_UK_tmean2.xlsx")
+RZ_UK_tmean<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmean2.xlsx")
+
+##### All AT clim vars and double brooding rate
+## create df with just double brooding and climate variables
+RZ_UK_tmean3 <- RZ_UK_tmean %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
+  select(site, year, early_nests, second_broods, tmeanUK03_04, tmeanUK05_06, lag1_tmeanUK07_08) %>% 
+  na.omit(RZ_UK_tmean) # remove all rows with NA
+# create column with observation number to fit observation level random effect
+RZ_UK_tmean3$obs<-seq(nrow(RZ_UK_tmean3))
+
+###################################
+###################################
+
+### within_site_tmeanUK03_04 glmm
+
+## glmm without site:year interaction
+DBR_tmeanUK03_04.glmm2 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                tmeanUK03_04+
+                                (1|site)+(1|obs), data=RZ_UK_tmean3, family=binomial)
+summary(DBR_tmeanUK03_04.glmm2) #  marginal effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_tmeanUK03_04.glmm2@beta)
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = DBR_tmeanUK03_04.glmm1)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## assumptions tests results
+# combined adjusted quantile test significant
+## using sjPlot package
+plot_model(DBR_tmeanUK03_04.glmm1, type = "diag") # random effect QQ-plot
+# year random effects on flat line
+
+
+###################################
+###################################
+
+### tmeanUK05_06 glmm
+
+## glmm without site:year interaction
+DBR_tmeanUK05_06.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                  tmeanUK05_06+
+                                  (1|site)+(1|obs), data=RZ_UK_tmean3, family=binomial)
+summary(DBR_tmeanUK05_06.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_tmeanUK05_06.glmm1@beta)
+
+###################################
+###################################
+
+### lag1_tmeanUK07_08 glmm
+
+## glmm without site:year interaction
+DBR_lag1_tmeanUK07_08.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                       lag1_tmeanUK07_08+
+                                  (1|site)+(1|obs), data=RZ_UK_tmean3, family=binomial)
+summary(DBR_lag1_tmeanUK07_08.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_lag1_tmeanUK07_08.glmm1@beta)
+
+###################################
+###################################
+
+######################################################################
+
+##### minimum UK temperature
+
+# RZ_UK_tmin<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/RZ_UK_tmin2.xlsx")
+RZ_UK_tmin<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmin2.xlsx")
+
+##### All AT clim vars and double brooding rate
+## create df with just double brooding and climate variables
+RZ_UK_tmin3 <- RZ_UK_tmin %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
+  select(site, year, early_nests, second_broods, tminUK03_04, tminUK05_06, lag1_tminUK07_08) %>% 
+  na.omit(RZ_UK_tmin) # remove all rows with NA
+# create column with observation number to fit observation level random effect
+RZ_UK_tmin3$obs<-seq(nrow(RZ_UK_tmin3))
+
+###################################
+###################################
+
+### tminUK03_04 glmm
+
+## glmm without site:year interaction
+DBR_tminUK03_04.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+
+                                 tminUK03_04+
+                                       (1|site)+(1|obs), data=RZ_UK_tmin3, family=binomial)
+summary(DBR_tminUK03_04.glmm1) #  marginal positive effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_tminUK03_04.glmm1@beta)
+
+###################################
+###################################
+
+### tminUK05_06 glmm
+
+## glmm without site:year interaction
+DBR_tminUK05_06.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+tminUK05_06+
+                                  (1|site)+(1|obs), data=RZ_UK_tmin3, family=binomial)
+summary(DBR_tminUK05_06.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_tminUK05_06.glmm1@beta)
+
+###################################
+###################################
+
+### lag1_tminUK07_08 glmm
+
+## glmm without site:year interaction
+DBR_lag1_tminUK07_08.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+lag1_tminUK07_08+
+                                 (1|site)+(1|obs), data=RZ_UK_tmin3, family=binomial)
+summary(DBR_lag1_tminUK07_08.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_lag1_tminUK07_08.glmm1@beta)
+
+###################################
+###################################
+
+######################################################################
+
+##### maximum UK temperature
+
+# RZ_UK_tmax<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/RZ_UK_tmax2.xlsx")
+RZ_UK_tmax<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_tmax2.xlsx")
+
+##### All AT clim vars and double brooding rate
+## create df with just double brooding and climate variables
+RZ_UK_tmax3 <- RZ_UK_tmax %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
+  select(site, year, early_nests, second_broods, tmaxUK03_04, tmaxUK05_06, lag1_tmaxUK07_08) %>% 
+  na.omit(RZ_UK_tmax) # remove all rows with NA
+# create column with observation number to fit observation level random effect
+RZ_UK_tmax3$obs<-seq(nrow(RZ_UK_tmax3))
+
+###################################
+###################################
+
+### tmaxUK03_04 glmm
+
+## glmm without site:year interaction
+DBR_tmaxUK03_04.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+tmaxUK03_04+
+                                 (1|site)+(1|obs), data=RZ_UK_tmax3, family=binomial)
+summary(DBR_tmaxUK03_04.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_tmaxUK03_04.glmm1@beta)
+
+###################################
+###################################
+
+### tmaxUK05_06 glmm
+
+## glmm without site:year interaction
+DBR_tmaxUK05_06.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+tmaxUK05_06+
+                                 (1|site)+(1|obs), data=RZ_UK_tmax3, family=binomial)
+summary(DBR_tmaxUK05_06.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_tmaxUK05_06.glmm1@beta)
+
+###################################
+###################################
+
+### lag1_tmaxUK07_08 glmm
+
+## glmm without site:year interaction
+DBR_lag1_tmaxUK07_08.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+lag1_tmaxUK07_08+
+                                      (1|site)+(1|obs), data=RZ_UK_tmax3, family=binomial)
+summary(DBR_lag1_tmaxUK07_08.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_lag1_tmaxUK07_08.glmm1@beta)
+
+###################################
+###################################
+
+######################################################################
+
+##### UK snow
+
+# RZ_UK_snow<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/RZ_UK_snow2.xlsx")
+RZ_UK_snow<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_UK_snow3.xlsx")
+
+##### All AT clim vars and double brooding rate
+## create df with just double brooding and climate variables
+RZ_UK_snow3 <- RZ_UK_snow %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
+  select(site, year, early_nests, second_broods, mean_first_egg, within_site_march_snow, within_site_april_snow, within_site_snowUK03_04) %>% 
+  na.omit(RZ_UK_snow) # remove all rows with NA
+# create column with observation number to fit observation level random effect
+RZ_UK_snow3$obs<-seq(nrow(RZ_UK_snow3))
+
+###################################
+###################################
+
+### snowUK03_04 glmm
+
+## glmm without site:year interaction
+DBR_snowUK03_04.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+within_site_snowUK03_04+
+                                 (1|site)+(1|obs), data=RZ_UK_snow3, family=binomial)
+summary(DBR_snowUK03_04.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_snowUK03_04.glmm1@beta)
+
+###################################
+###################################
+
+### march_snow glmm
+
+## glmm without site:year interaction
+DBR_march_snow.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+within_site_march_snow+
+                                 (1|site)+(1|obs), data=RZ_UK_snow3, family=binomial)
+summary(DBR_march_snow.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_march_snow.glmm1@beta)
+
+###################################
+###################################
+
+### april_snow glmm
+
+## glmm without site:year interaction
+DBR_april_snow.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+within_site_april_snow+
+                                 (1|site)+(1|obs), data=RZ_UK_snow3, family=binomial)
+summary(DBR_april_snow.glmm1) #  no effect of climate variable on DBR
+
+# back transform from log odds scale to probability
+plogis(DBR_april_snow.glmm1@beta)
+
 ###################################################################
 
 ############### spring NAO index ################
+
+RZ_NAO<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_NAO.xlsx")
+
+## create df with just double brooding and climate variables
+RZ_NAO3 <- RZ_NAO %>% 
+    select(site, year, early_nests, second_broods, march_NAO, april_NAO, may_NAO, NAO_03_05) %>% 
+    na.omit(RZ_NAO) # remove all rows with NA
+# create column with observation number to fit observation level random effect
+RZ_NAO3$obs<-seq(nrow(RZ_NAO3))
+
+##### March-May NAO (NAO_03_05)
+
+NAO_03_05.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+NAO_03_05+(1|year)+(1|site)+(1|obs), data=RZ_NAO3, family=binomial())
+summary(NAO_03_05.glmm1) 
+
+# back transform from log odds scale to probability
+plogis(NAO_03_05.glmm1@beta)

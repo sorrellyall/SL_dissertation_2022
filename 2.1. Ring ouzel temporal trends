@@ -1,0 +1,1272 @@
+rm(list=ls())
+### in this code:
+# tests for temporal trends in each ring ouzel response at each site plus temporal autocorrelation tests
+# tests for temporal trends in each ring ouzel response across sites
+# calculations of mean annual sample sizes
+
+## load packages
+library("readxl")
+library(dplyr)
+library(lme4)
+library(ggeffects) # to plot glmm effects
+library(ggplot2)
+library(tidyverse) 
+library(DHARMa) # to diagnose glmms
+library(sjPlot)
+library(sjmisc)
+library(glmmTMB)
+library(TMB)
+library(glmm)
+library(nlme) # for temporal autocorrelation tests
+library(MuMIn) # for temporal autocorrelation tests
+library(inlmisc) # for colour-blind friendly colour palette
+library(DMwR2)
+library(interactions)
+library(grid)
+library(gridExtra)
+library(cowplot)
+
+####################################################
+
+############ territory occupancy ############
+
+# breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx")
+breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
+
+### GLM for each site (6 sites) 
+# Response variable y = territory_occupancy
+# Explanatory variable x = year
+# Error structure = Quasipoisson (residuals are overdispersed for Poisson error structure, see below)
+# use subset() to use only one site in each model
+
+## Poisson error structure test
+TO_GC_mod_poisson <- glm(territory_occupancy~year, data=subset(breeding_sites, site == "glen_clunie"), family=poisson)
+summary(TO_GC_mod_poisson)
+# residual deviance / df = 60.482/21 = 2.88
+# this ratio is greater than one, therefore the data is overdispersed
+# overdispersion is not too severe, therefore use a quasipoisson error structure, rather than a negative binomial
+
+# plot display 2x3 and change margins
+par(mfrow=c(2,3))
+par(mar=c(5,5,3,2))
+
+## GLM for Glen Clunie (GC) TO
+TO_GC_mod <- glm(territory_occupancy~year, data=subset(breeding_sites, site == "glen_clunie"), family=quasipoisson)
+summary(TO_GC_mod)
+exp(coef(TO_GC_mod)[1])
+exp(coef(TO_GC_mod)[2])
+# plot using ggplot
+pred.mm1 <- ggpredict(TO_GC_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p1 <- (ggplot(pred.mm1) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data=subset(breeding_sites, site == "glen_clunie"), aes(x = year, y = territory_occupancy), colour="#4477AA", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+)
+# calculate percentage change in TO across study period
+intercept <- coef(TO_GC_mod)[1]
+year <- coef(TO_GC_mod)[2]
+TO_before <- year*1998 + intercept # calculate y (TO) at start of study period
+TO_now <- year*2021 + intercept # calculate y (TO) at end of study period 
+TO_percent_change <- (1 - (exp(TO_now)/exp(TO_before)))*-100
+
+
+## GLM for Glen Effock (GEF) TO
+TO_GEF_mod <- glm(territory_occupancy~year, data=subset(breeding_sites, site == "glen_effock"), family=quasipoisson)
+summary(TO_GEF_mod) # significant positive effect of year
+exp(coef(TO_GEF_mod)[1])
+exp(coef(TO_GEF_mod)[2])
+# plot using ggplot
+pred.mm2 <- ggpredict(TO_GEF_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p2 <- (ggplot(pred.mm2) + 
+               geom_line(aes(x = x, y = predicted), linetype="solid") + # slope         
+               geom_point(data=subset(breeding_sites, site == "glen_effock"), aes(x = year, y = territory_occupancy), colour="#CCBB44", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+)
+# calculate percentage change in TO across study period
+intercept <- coef(TO_GEF_mod)[1]
+year <- coef(TO_GEF_mod)[2]
+TO_before <- year*2002 + intercept # calculate y (TO) at start of study period
+TO_now <- year*2009 + intercept # calculate y (TO) at end of study period 
+TO_percent_change <- (1 - (exp(TO_now)/exp(TO_before)))*-100
+
+
+## GLM for Glen Esk (GE) TO
+TO_GE_mod <- glm(territory_occupancy~year, data=subset(breeding_sites, site == "glen_esk"), family=quasipoisson)
+summary(TO_GE_mod)
+exp(coef(TO_GE_mod)[1])
+exp(coef(TO_GE_mod)[2])
+# plot using ggplot
+pred.mm3 <- ggpredict(TO_GE_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p3 <- (ggplot(pred.mm3) + 
+               geom_line(aes(x = x, y = predicted), linetype="solid") + # slope         
+               geom_point(data=subset(breeding_sites, site == "glen_esk"), aes(x = year, y = territory_occupancy), colour="#66CCEE", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+)
+# calculate percentage change in TO across study period
+intercept <- coef(TO_GE_mod)[1]
+year <- coef(TO_GE_mod)[2]
+TO_before <- year*1992 + intercept # calculate y (TO) at start of study period
+TO_now <- year*2009 + intercept # calculate y (TO) at end of study period 
+TO_percent_change <- (1 - (exp(TO_now)/exp(TO_before)))*-100
+
+## GLM for Haweswater (HW) TO
+TO_HW_mod <- glm(territory_occupancy~year, data=subset(breeding_sites, site == "haweswater"), family=quasipoisson)
+summary(TO_HW_mod)
+exp(coef(TO_HW_mod)[1])
+exp(coef(TO_HW_mod)[2])
+# plot using ggplot
+pred.mm4 <- ggpredict(TO_HW_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p4 <- (ggplot(pred.mm4) + 
+               geom_line(aes(x = x, y = predicted), linetype="solid") + # slope         
+               geom_point(data=subset(breeding_sites, site == "haweswater"), aes(x = year, y = territory_occupancy), colour="#EE6677", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+)
+# calculate percentage change in TO across study period
+intercept <- coef(TO_HW_mod)[1]
+year <- coef(TO_HW_mod)[2]
+TO_before <- year*1989 + intercept # calculate y (TO) at start of study period
+TO_now <- year*2021 + intercept # calculate y (TO) at end of study period 
+TO_percent_change <- (1 - (exp(TO_now)/exp(TO_before)))*-100
+
+
+## GLM for Long Mynd (LM) TO
+TO_LM_mod <- glm(territory_occupancy~year, data=subset(breeding_sites, site == "long_mynd"), family=quasipoisson)
+summary(TO_LM_mod)
+exp(coef(TO_LM_mod)[1])
+exp(coef(TO_LM_mod)[2])
+# plot using ggplot
+pred.mm5 <- ggpredict(TO_LM_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p5 <- (ggplot(pred.mm5) + 
+               geom_line(aes(x = x, y = predicted), linetype="solid") + # slope         
+               geom_point(data=subset(breeding_sites, site == "long_mynd"), aes(x = year, y = territory_occupancy), colour="#228833", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+)
+# calculate percentage change in TO across study period
+intercept <- coef(TO_LM_mod)[1]
+year <- coef(TO_LM_mod)[2]
+TO_before <- year*1994 + intercept # calculate y (TO) at start of study period
+TO_now <- year*2003 + intercept # calculate y (TO) at end of study period 
+TO_percent_change <- (1 - (exp(TO_now)/exp(TO_before)))*-100
+
+
+## GLM for Rosedale (RD) TO
+TO_RD_mod <- glm(territory_occupancy~year, data=subset(breeding_sites, site == "rosedale"), family=quasipoisson)
+summary(TO_RD_mod)
+exp(coef(TO_RD_mod)[1])
+exp(coef(TO_RD_mod)[2])
+# plot using ggplot
+pred.mm6 <- ggpredict(TO_RD_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p6 <- (ggplot(pred.mm6) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data=subset(breeding_sites, site == "rosedale"), aes(x = year, y = territory_occupancy), colour="#AA3377", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+)
+# calculate percentage change in TO across study period
+intercept <- coef(TO_RD_mod)[1]
+year <- coef(TO_RD_mod)[2]
+TO_before <- year*2000 + intercept # calculate y (TO) at start of study period
+TO_now <- year*2018 + intercept # calculate y (TO) at end of study period 
+TO_percent_change <- (1 - (exp(TO_now)/exp(TO_before)))*-100
+
+
+## combine plots
+TO_trends.all <- plot_grid(p1, p2, p3, p4, p5, p6,
+                           labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)"), label_size = 10,
+                           ncol = 3,
+                           nrow = 2,
+                           rel_widths = c(2,2,2))
+
+# add year x axis label
+TO_trends.all2 <- plot_grid(TO_trends.all + theme(plot.margin=unit(c(0.3,0.2,-0.5,0.2), "cm")),
+                               top=textGrob("       Year"),
+                               nrow=2, rel_heights = c(10,0.5))
+
+# add territory occupancy y axis label
+TO_trends.all3 <- plot_grid(top=textGrob("Territory occupancy", rot=90),
+                            TO_trends.all2 + theme(plot.margin=unit(c(0.1,0.1,0,-0.4), "cm")),
+                            ncol = 2, rel_widths = c(0.5,10))
+
+TO_trends.all3 # display plot
+
+
+
+## GLM model diagnostics
+par(mfrow=c(2,2)) # plot 4 panels in a 2x2 grid
+plot(TO_GC_mod) # glen clunie
+plot(TO_GEF_mod) # glen effock
+plot(TO_GE_mod) # glen esk
+plot(TO_HW_mod) # haweswater
+plot(TO_LM_mod) # long mynd
+plot(TO_RD_mod) # rosedale
+
+### temporal autocorrelation tests
+# https://rpubs.com/markpayne/164550
+# generalised least squares fit model gls()
+
+## Glen Clunie autocorrelation
+TO_GC_mod.ac <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "glen_clunie"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(TO_GC_mod.ac) # phi=0.9999902
+# create null model with gls() but without correlation term, to compare against .ac model
+TO_GC_mod.null <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "glen_clunie"), na.action=na.omit)
+acf(residuals(TO_GC_mod.null)) # autocorrelation plot
+plot(residuals(TO_GC_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(TO_GC_mod.null, TO_GC_mod.ac) # autocorrelated model has a lower log likelihood (-61.91316 vs. -79.38522, p<0.0001), therefore is the better model
+# choose best model using AIC model selection
+model.sel(TO_GC_mod.null, TO_GC_mod.ac) # autocorrelated model ranked higher than null model
+
+## Glen Effock autocorrelation
+TO_GEF_mod.ac <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "glen_effock"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(TO_GEF_mod.ac) # phi=0.57257
+# create null model with gls() but without correlation term, to compare against .ac model
+TO_GEF_mod.null <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "glen_effock"), na.action=na.omit)
+acf(residuals(TO_GEF_mod.null)) # autocorrelation plot
+plot(residuals(TO_GEF_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(TO_GEF_mod.null, TO_GEF_mod.ac) # NO DIFFERENCE IN MODEL AIC OR LOG LIKELIHOOD
+# choose best model using AIC model selection
+model.sel(TO_GEF_mod.null, TO_GEF_mod.ac) # autocorrelated model ranked higher than null model
+
+## Glen Esk autocorrelation
+TO_GE_mod.ac <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "glen_esk"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(TO_GE_mod.ac) # phi=0.55345
+# create null model with gls() but without correlation term, to compare against .ac model
+TO_GE_mod.null <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "glen_esk"), na.action=na.omit)
+acf(residuals(TO_GE_mod.null)) # autocorrelation plot
+plot(residuals(TO_GE_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(TO_GE_mod.null, TO_GE_mod.ac) # autocorrelated model has a lower log likelihood (-39.656 vs. -41.926, p=0.0331), therefore is the better model
+# choose best model using AIC model selection
+model.sel(TO_GE_mod.null, TO_GE_mod.ac) # autocorrelated model ranked higher than null model
+
+## Haweswater autocorrelation
+TO_HW_mod.ac <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "haweswater"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(TO_HW_mod.ac) # phi=0.656199
+# create null model with gls() but without correlation term, to compare against .ac model
+TO_HW_mod.null <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "haweswater"), na.action=na.omit)
+acf(residuals(TO_HW_mod.null)) # autocorrelation plot
+plot(residuals(TO_HW_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(TO_HW_mod.null, TO_HW_mod.ac) # autocorrelated model has a lower log likelihood (-40.592 vs. -43.927, p=0.0098), therefore is the better model
+# choose best model using AIC model selection
+model.sel(TO_HW_mod.null, TO_HW_mod.ac) # autocorrelated model ranked higher than null model
+
+## Long Mynd autocorrelation
+TO_LM_mod.ac <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "long_mynd"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(TO_LM_mod.ac) # phi=0.9999153
+# create null model with gls() but without correlation term, to compare against .ac model
+TO_LM_mod.null <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "long_mynd"), na.action=na.omit)
+acf(residuals(TO_LM_mod.null)) # autocorrelation plot
+plot(residuals(TO_LM_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(TO_LM_mod.null, TO_LM_mod.ac) # no difference in the log likelihoods of the two models (-21.21425 vs. -22.23446, p=0.1532)
+# choose best model using AIC model selection
+model.sel(TO_LM_mod.null, TO_LM_mod.ac) # null model ranked higher than autocorrelated model, but not significant
+
+## Rosedale autocorrelation
+TO_RD_mod.ac <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "rosedale"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(TO_RD_mod.ac) # phi=0.7513935
+# create null model with gls() but without correlation term, to compare against .ac model
+TO_RD_mod.null <- gls(territory_occupancy~year, data=subset(breeding_sites, site == "rosedale"), na.action=na.omit)
+acf(residuals(TO_RD_mod.null)) # autocorrelation plot
+plot(residuals(TO_RD_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(TO_RD_mod.null, TO_RD_mod.ac) # autocorrelated model has a lower log likelihood (-45.40965 vs. -48.91381, p=0.0081), therefore is the better model
+# choose best model using AIC model selection
+model.sel(TO_RD_mod.null, TO_RD_mod.ac) # autocorrelated model ranked higher than null model
+
+############
+
+##### TO GLMM
+
+## create new variable with Glen Effock and Glen Esk labelled as the same site, as these sites are too close together to be independent
+breeding_sites$TO_site_id <- breeding_sites$site # create a new column called site_id and use a base column to change in subsequent code
+breeding_sites$TO_site_id[breeding_sites$site=="glen_effock"] <- "glen_effock_esk" # if site is glen_effock, put 'glen_effock_esk' in the new site_id column
+breeding_sites$TO_site_id[breeding_sites$site=="glen_esk"] <- "glen_effock_esk" # if site is glen_esk, put 'glen_effock_esk' in the new site_id column
+
+######### colour-blind friendly colour palette
+## bright palette
+brightcols6 <- inlmisc::GetColors(6, scheme = "bright")
+print(brightcols6) # return HEX values
+plot(brightcols6) # view colours
+##  blue       red      green    yellow      cyan    purple 
+# "#4477AA" "#EE6677" "#228833" "#CCBB44" "#66CCEE" "#AA3377" 
+#    GC        GEF        GE       HW         LM        RD
+
+
+### territory occupancy (TO) GLMM
+
+# Model The Data with an Observation Level Random Effect
+# for overdispersed Poisson data
+## https://figshare.com/articles/dataset/Overdispersion_and_Observation_Level_Random_Effect_Simulation_Data/1144471?file=3215240
+# Create a sequence of numbers corresponding to each observation (rows of the dataframe)
+breeding_sites$obs<-seq(nrow(breeding_sites))
+breeding_sites<-subset(breeding_sites,is.na(territory_occupancy)==FALSE)
+
+# glmm to test for an effect of year on TO
+TO.glmm1 <- glmer(territory_occupancy~scale(year)+(1|year)+(1|TO_site_id)+(1|obs), data=breeding_sites, family=poisson)
+summary(TO.glmm1)
+
+# glmm with site:year interaction to test whether the effect of year on TO depends on site
+TO.glmm2 <- glmer(territory_occupancy~scale(year)+scale(year):TO_site_id+(1|year)+(1|TO_site_id)+(1|obs), data=breeding_sites, family=poisson)
+summary(TO.glmm2) 
+
+# anova to compare models with and without interaction term
+anova(TO.glmm1, TO.glmm2)
+# site:year interaction is significant 
+
+### unscale year by dividing the coefficient by the scaling
+## slope
+year.unscaled <- summary(TO.glmm1)$coefficients[2,1]/attr(scale(breeding_sites$year),"scaled:scale")
+year.unscaled
+# exponentiate to get annual proportional change
+exp(year.unscaled)
+## intercept
+intercept.unscaled <- summary(TO.glmm1)$coefficients[1,1]-(summary(TO.glmm1)$coefficients[2,1]/attr(scale(breeding_sites$year),"scaled:scale"))*attr(scale(breeding_sites$year),"scaled:center")
+
+### calculate percentage change in TO between 1989-2021
+TO_before <- exp(year.unscaled*1989 + intercept.unscaled) # calculate y (TO) at start of study period
+TO_now <- exp(year.unscaled*2021 + intercept.unscaled) # calculate y (TO) at end of study period 
+TO_percent_change <- (1 - (TO_now/TO_before))*-100
+
+####################
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = TO.glmm1)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## using sjPlot package
+plot_model(TO.glmm1, type = "diag") # random effect QQ-plot
+# model satisfies poisson glmm assumptions
+
+###################
+
+##### repeating glmm with all sites and LM TO as zero for all years after populatino extinction
+
+# TO_zeros<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx", sheet="zeros")
+TO_zeros<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx", sheet = "zeros")
+
+## create new variable with Glen Effock and Glen Esk labelled as the same site, as these sites are too close together to be independent
+TO_zeros$TO_site_id <- TO_zeros$site # create a new column called site_id and use a base column to change in subsequent code
+TO_zeros$TO_site_id[TO_zeros$site=="glen_effock"] <- "glen_effock_esk" # if site is glen_effock, put 'glen_effock_esk' in the new site_id column
+TO_zeros$TO_site_id[TO_zeros$site=="glen_esk"] <- "glen_effock_esk" # if site is glen_esk, put 'glen_effock_esk' in the new site_id column
+
+# create column with obs number for observation level random effect
+TO_zeros$obs<-seq(nrow(TO_zeros))
+
+# glmm to test for an effect of year on TO
+TO_zeros.glmm1 <- glmer(territory_occupancy~scale(year)+(1|year)+(1|TO_site_id)+(1|obs), data=TO_zeros, family=poisson)
+summary(TO_zeros.glmm1)
+
+# glmm with site:year interaction to test whether the effect of year on TO depends on site
+TO_zeros.glmm2 <- glmer(territory_occupancy~scale(year)+scale(year):TO_site_id+(1|year)+(1|TO_site_id)+(1|obs), data=TO_zeros, family=poisson)
+summary(TO_zeros.glmm2) 
+
+# anova to compare models with and without interaction term
+anova(TO_zeros.glmm1, TO_zeros.glmm2)
+# site:year interaction is significant
+
+### unscale year by dividing the coefficient by the scaling
+## slope
+year.unscaled <- summary(TO_zeros.glmm1)$coefficients[2,1]/attr(scale(TO_zeros$year),"scaled:scale")
+year.unscaled
+# exponentiate to get annual proportional change
+exp(year.unscaled)
+## intercept
+intercept.unscaled <- summary(TO_zeros.glmm1)$coefficients[1,1]-(summary(TO_zeros.glmm1)$coefficients[2,1]/attr(scale(TO_zeros$year),"scaled:scale"))*attr(scale(TO_zeros$year),"scaled:center")
+
+### calculate percentage change in TO between 1989-2021
+TO_before <- exp(year.unscaled*1989 + intercept.unscaled) # calculate y (TO) at start of study period
+TO_now <- exp(year.unscaled*2021 + intercept.unscaled) # calculate y (TO) at end of study period 
+TO_percent_change <- (1 - (TO_now/TO_before))*100
+
+####################################################
+
+############ laying date ############
+
+### create new dataframe with just laying date data and omitted NA rows
+ld_df <- breeding_sites %>% # create a new dataframe called ld_df, and from the breeding_sites dataframe...
+        select(site, year, mean_first_egg) %>% # select only the columns site, year and mean_first_egg
+        na.omit(breeding_sites) # remove all rows with NA
+# laying date data all in units of April days 
+
+## LM for Glen Clunie (GC) MLD
+MLD_GC_mod <- lm(mean_first_egg~year, data=subset(ld_df, site == "glen_clunie"))
+summary(MLD_GC_mod)
+# plot using ggplot
+pred.mm1 <- ggpredict(MLD_GC_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p1 <- (ggplot(pred.mm1) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data=subset(ld_df, site == "glen_clunie"), aes(x = year, y = mean_first_egg), colour="#4477AA", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+) 
+# calculate change in LD across study period
+intercept <- coef(MLD_GC_mod)[1]
+year <- coef(MLD_GC_mod)[2]
+LD_before <- year*1998 + intercept # calculate y (TO) at start of study period
+LD_now <- year*2019 + intercept # calculate y (TO) at end of study period 
+LD_change <- LD_now - LD_before # subtract exponentiated y at end of study period from start of study period
+
+
+## LM for Glen Effock (GEF) MLD
+MLD_GEF_mod <- lm(mean_first_egg~year, data=subset(ld_df, site == "glen_effock"))
+summary(MLD_GEF_mod)
+# plot using ggplot
+pred.mm2 <- ggpredict(MLD_GEF_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p2 <- (ggplot(pred.mm2) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data=subset(ld_df, site == "glen_effock"), aes(x = year, y = mean_first_egg), colour="#CCBB44", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+) 
+# calculate change in LD across study period
+intercept <- coef(MLD_GEF_mod)[1]
+year <- coef(MLD_GEF_mod)[2]
+LD_before <- year*2002 + intercept # calculate y (TO) at start of study period
+LD_now <- year*2009 + intercept # calculate y (TO) at end of study period 
+LD_change <- LD_now - LD_before # subtract exponentiated y at end of study period from start of study period
+
+
+## LM for Rosedale (RD) MLD
+MLD_RD_mod <- lm(mean_first_egg~year, data=subset(ld_df, site == "rosedale"))
+summary(MLD_RD_mod)
+# plot using ggplot
+pred.mm3 <- ggpredict(MLD_RD_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p3 <- (ggplot(pred.mm3) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data=subset(ld_df, site == "rosedale"), aes(x = year, y = mean_first_egg), colour="#AA3377", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+) 
+# calculate change in LD across study period
+intercept <- coef(MLD_RD_mod)[1]
+year <- coef(MLD_RD_mod)[2]
+LD_before <- year*2009 + intercept # calculate y (TO) at start of study period
+LD_now <- year*2018 + intercept # calculate y (TO) at end of study period 
+LD_change <- LD_now - LD_before # subtract exponentiated y at end of study period from start of study period
+
+## combine plots
+LD_trends.all <- plot_grid(p1, p2, p3,
+                            labels = c("(a)", "(b)", "(c)"), label_size = 10,
+                            ncol = 3,
+                            nrow = 1,
+                            rel_widths = c(2,2))
+
+# add year x axis label
+LD_trends.all2 <- plot_grid(LD_trends.all + theme(plot.margin=unit(c(0.3,0.2,-0.5,0.2), "cm")),
+                             top=textGrob("       Year"),
+                             nrow=2, rel_heights = c(10,1))
+
+# add territory occupancy y axis label
+LD_trends.all3 <- plot_grid(top=textGrob("Laying date (April days)", rot=90),
+                            LD_trends.all2 + theme(plot.margin=unit(c(0.1,0.1,0,-0.4), "cm")),
+                             ncol = 2, rel_widths = c(0.5,10))
+
+LD_trends.all3 # display plot
+
+## LM model diagnostics
+par(mfrow=c(2,2)) # plot 4 panels in a 2x2 grid
+plot(MLD_GC_mod) # glen clunie
+plot(MLD_GEF_mod) # glen effock
+plot(MLD_RD_mod) # rosedale
+
+### temporal autocorrelation tests
+# https://rpubs.com/markpayne/164550
+# generalised least squares fit model gls()
+
+## Glen Clunie autocorrelation
+LD_GC_mod.ac <- gls(mean_first_egg~year, data=subset(ld_df, site == "glen_clunie"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(LD_GC_mod.ac) # phi=0.9999902
+# create null model with gls() but without correlation term, to compare against .ac model
+LD_GC_mod.null <- gls(mean_first_egg~year, data=subset(ld_df, site == "glen_clunie"), na.action=na.omit)
+acf(residuals(LD_GC_mod.null)) # autocorrelation plot
+plot(residuals(LD_GC_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(LD_GC_mod.null, LD_GC_mod.ac) 
+
+## Glen Effock autocorrelation
+LD_GEF_mod.ac <- gls(mean_first_egg~year, data=subset(ld_df, site == "glen_effock"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(LD_GEF_mod.ac) # phi=0.9999902
+# create null model with gls() but without correlation term, to compare against .ac model
+LD_GEF_mod.null <- gls(mean_first_egg~year, data=subset(ld_df, site == "glen_effock"), na.action=na.omit)
+acf(residuals(LD_GEF_mod.null)) # autocorrelation plot
+plot(residuals(LD_GEF_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(LD_GEF_mod.null, LD_GEF_mod.ac) 
+
+## Rosedale autocorrelation
+LD_RD_mod.ac <- gls(mean_first_egg~year, data=subset(ld_df, site == "rosedale"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(LD_RD_mod.ac) # phi=0.9999902
+# create null model with gls() but without correlation term, to compare against .ac model
+LD_RD_mod.null <- gls(mean_first_egg~year, data=subset(ld_df, site == "rosedale"), na.action=na.omit)
+acf(residuals(LD_RD_mod.null)) # autocorrelation plot
+plot(residuals(LD_RD_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(LD_RD_mod.null, LD_RD_mod.ac) 
+
+###############
+
+##### LMM of laying date across sites
+# y = mean_first_egg
+# fixed effect = year (scaled)
+# interaction term site:scale(year)
+# random effects = year, site
+
+## LMM without interaction 
+mld.lmm1 <- lmer(mean_first_egg~scale(year)+(1|year)+(1|site),data=ld_df)
+summary(mld.lmm1)
+
+## LMM with year:site interaction
+mld.lmm2 <- lmer(mean_first_egg~scale(year)+scale(year):site+(1|year)+(1|site),data=ld_df)
+
+# compare models with and without interaction to test if interaction is significant
+anova(mld.lmm1, mld.lmm2) # compare models
+# slope does not differ between sites
+
+## unscale year by dividing the coefficient by the scaling
+year.unscaled <- summary(mld.lmm1)$coefficients[2,1]/attr(scale(ld_df$year),"scaled:scale")
+## intercept
+intercept.unscaled <- summary(mld.lmm1)$coefficients[1,1]-(summary(mld.lmm1)$coefficients[2,1]/attr(scale(ld_df$year),"scaled:scale"))*attr(scale(ld_df$year),"scaled:center")
+
+### calculate percentage change in TO between 1989-2021
+LD_before <- year.unscaled*1998 + intercept.unscaled # calculate y (TO) at start of study period
+LD_now <- year.unscaled*2018 + intercept.unscaled # calculate y (TO) at end of study period 
+LD_change <- LD_now - LD_before # subtract exponentiated y at end of study period from start of study period
+
+####### calculate mean annual sample size for laying date data
+
+## create df with year, site, territory_occupancy, mean_first_egg
+### create new dataframe with just laying date data and omitted NA rows
+ld_df2 <- breeding_sites %>% # create a new dataframe called ld_df, and from the breeding_sites dataframe...
+        select(year, territory_occupancy, mean_first_egg) %>% # select only the columns site, year and mean_first_egg
+        na.omit(breeding_sites) # remove all rows with NA
+# laying date data all in units of April days 
+ld_df2.2 <- ld_df2 %>%
+        group_by(year) %>%
+        summarise(sample=sum(territory_occupancy))
+mean_annual_sample <- mean(ld_df2.2$sample)
+
+####################################################
+
+############ double brooding rate ############
+
+### dataframe manipulation
+dbr_df <- breeding_sites %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
+        select(site, year, early_nests, second_broods) %>% # select only the columns site, year and dbr
+        na.omit(breeding_sites) # remove all rows with NA
+
+### GLM for each site (4 sites) 
+# Response variable y = dbr
+# Explanatory variable x = year
+# Error structure = binomial for proportional data
+
+## GLM for Glen Clunie (GC) DBR 
+DBR_GC_mod <-glm(cbind(second_broods, early_nests-second_broods)~year, data=subset(dbr_df, site == "glen_clunie"), family=binomial)
+summary(DBR_GC_mod)
+# back transform the coefficients from the logit scale 
+plogis(DBR_GC_mod$coefficients) 
+# plot using ggplot
+pred.mm1 <- ggpredict(DBR_GC_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p1 <- (ggplot(pred.mm1) + 
+               geom_line(aes(x = x, y = predicted), linetype="solid") + # slope         
+               geom_point(data=subset(dbr_df, site == "glen_clunie"), aes(x = year, y = second_broods/early_nests), colour="#4477AA", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+) 
+# calculate percentage change in DBR across study period
+intercept <- coef(DBR_GC_mod)[1]
+year <- coef(DBR_GC_mod)[2]
+DBR_before <- year*2000 + intercept # calculate y (TO) at start of study period
+DBR_now <- year*2019 + intercept # calculate y (TO) at end of study period 
+DBR_change <- 100*(plogis(DBR_now) - plogis(DBR_before))  # subtract exponentiated y at end of study period from start of study period
+            
+## GLM for Glen Effock (GEF) DBR 
+DBR_GEF_mod <-glm(cbind(second_broods, early_nests-second_broods)~year, data=subset(dbr_df, site == "glen_effock"), family=binomial)
+summary(DBR_GEF_mod)
+# back transform the coefficients from the logit scale 
+plogis(DBR_GEF_mod$coefficients) 
+# plot using ggplot
+pred.mm2 <- ggpredict(DBR_GEF_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p2 <- (ggplot(pred.mm2) + 
+               geom_line(aes(x = x, y = predicted), linetype="solid") + # slope         
+               geom_point(data=subset(dbr_df, site == "glen_effock"), aes(x = year, y = second_broods/early_nests), colour="#CCBB44", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+) 
+# calculate percentage change in DBR across study period
+intercept <- coef(DBR_GEF_mod)[1]
+year <- coef(DBR_GEF_mod)[2]
+DBR_before <- year*2002 + intercept # calculate y (TO) at start of study period
+DBR_now <- year*2009 + intercept # calculate y (TO) at end of study period 
+DBR_change <- 100*(plogis(DBR_now) - plogis(DBR_before))  # subtract exponentiated y at end of study period from start of study period
+
+## GLM for Long Mynd (LM) DBR 
+DBR_LM_mod <-glm(cbind(second_broods, early_nests-second_broods)~year, data=subset(dbr_df, site == "long_mynd"), family=binomial)
+summary(DBR_LM_mod)
+# back transform the coefficients from the logit scale 
+plogis(DBR_LM_mod$coefficients) 
+# plot using ggplot
+pred.mm3 <- ggpredict(DBR_LM_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p3 <- (ggplot(pred.mm3) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data=subset(dbr_df, site == "long_mynd"), aes(x = year, y = second_broods/early_nests), colour="#228833", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic()
+) 
+# calculate percentage change in DBR across study period
+intercept <- coef(DBR_LM_mod)[1]
+year <- coef(DBR_LM_mod)[2]
+DBR_before <- year*1995 + intercept # calculate y (TO) at start of study period
+DBR_now <- year*2003 + intercept # calculate y (TO) at end of study period 
+DBR_change <- 100*(plogis(DBR_now) - plogis(DBR_before))  # subtract exponentiated y at end of study period from start of study period
+
+## GLM for Rosedale (RD) DBR 
+DBR_RD_mod <-glm(cbind(second_broods, early_nests-second_broods)~year, data=subset(dbr_df, site == "rosedale"), family=binomial)
+summary(DBR_RD_mod)
+# back transform the coefficients from the logit scale 
+plogis(DBR_RD_mod$coefficients) 
+# plot using ggplot
+pred.mm4 <- ggpredict(DBR_RD_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p4 <- (ggplot(pred.mm4) + 
+               geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+               geom_point(data=subset(dbr_df, site == "rosedale"), aes(x = year, y = second_broods/early_nests), colour="#AA3377", size=1.5) + 
+               geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                           fill = "lightgrey", alpha = 0.5) +  # error band
+               labs(x = "", y = "", title = "") + 
+               theme_classic() +
+               scale_x_continuous(breaks=pretty_breaks(n=4))
+) 
+# calculate percentage change in DBR across study period
+intercept <- coef(DBR_RD_mod)[1]
+year <- coef(DBR_RD_mod)[2]
+DBR_before <- year*2008 + intercept # calculate y (TO) at start of study period
+DBR_now <- year*2018 + intercept # calculate y (TO) at end of study period 
+DBR_change <- 100*(plogis(DBR_now) - plogis(DBR_before))  # subtract exponentiated y at end of study period from start of study period
+
+
+## combine plots
+DBR_trends.all <- plot_grid(p1, p2, p3, p4,
+                            labels = c("(a)", "(b)", "(c)", "(d)"), label_size = 10,
+                            ncol = 2,
+                            nrow = 2,
+                            rel_widths = c(2,2))
+
+# add year x axis label
+DBR_trends.all2 <- plot_grid(DBR_trends.all + theme(plot.margin=unit(c(0.3,0.2,-0.5,0.2), "cm")),
+                            top=textGrob("       Year"),
+                            nrow=2, rel_heights = c(10,0.5))
+
+# add territory occupancy y axis label
+DBR_trends.all3 <- plot_grid(top=textGrob("Double brooding rate", rot=90),
+                             DBR_trends.all2 + theme(plot.margin=unit(c(0.1,0.1,0,-0.4), "cm")),
+                             ncol = 2, rel_widths = c(0.5,10))
+
+DBR_trends.all3 # display plot
+
+## GLM model diagnostics
+plot(DBR_GC_mod) # glen clunie
+plot(DBR_GEF_mod) # glen effock
+plot(DBR_RD_mod) # rosedale
+
+### temporal autocorrelation
+# https://rpubs.com/markpayne/164550
+# generalised least squares fit model gls()
+
+## Glen Clunie autocorrelation
+DBR_GC_mod.ac <- gls(second_broods/early_nests~year, data=subset(dbr_df, site == "glen_clunie"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(DBR_GC_mod.ac) # phi=-0.28297
+# create null model with gls() but without correlation term, to compare against .ac model
+DBR_GC_mod.null <- gls(second_broods/early_nests~year, data=subset(dbr_df, site == "glen_clunie"), na.action=na.omit)
+acf(residuals(DBR_GC_mod.null)) # autocorrelation plot
+plot(residuals(DBR_GC_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(DBR_GC_mod.null, DBR_GC_mod.ac) # no difference in the log likelihoods of the two models (7.0532 vs. 6.4428, p=0.2692)
+# choose best model using AIC model selection
+model.sel(DBR_GC_mod.null, DBR_GC_mod.ac) # null model ranked higher than autocorrelated model
+
+## Glen Effock autocorrelation
+DBR_GEF_mod.ac <- gls(second_broods/early_nests~year, data=subset(dbr_df, site == "glen_effock"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(DBR_GEF_mod.ac) # phi=-0.6455
+# create null model with gls() but without correlation term, to compare against .ac model
+DBR_GEF_mod.null <- gls(second_broods/early_nests~year, data=subset(dbr_df, site == "glen_effock"), na.action=na.omit)
+acf(residuals(DBR_GEF_mod.null)) # autocorrelation plot
+plot(residuals(DBR_GEF_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(DBR_GEF_mod.null, DBR_GEF_mod.ac) # no difference in the log likelihoods of the two models (1.7714 vs 0.7188, p=0.1468)
+# choose best model using AIC model selection
+model.sel(DBR_GEF_mod.null, DBR_GEF_mod.ac) # null model ranked higher than autocorrelated model
+
+## Long Mynd autocorrelation
+DBR_LM_mod.ac <- gls(second_broods/early_nests~year, data=subset(dbr_df, site == "long_mynd"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(DBR_LM_mod.ac) # phi=166312
+# create null model with gls() but without correlation term, to compare against .ac model
+DBR_LM_mod.null <- gls(second_broods/early_nests~year, data=subset(dbr_df, site == "long_mynd"), na.action=na.omit)
+acf(residuals(DBR_LM_mod.null)) # autocorrelation plot
+plot(residuals(DBR_LM_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(DBR_LM_mod.null, DBR_LM_mod.ac) # no difference in the log likelihoods of the two models (3.29933 vs. 3.210084, p=0.6727)
+# choose best model using AIC model selection
+model.sel(DBR_LM_mod.null, DBR_LM_mod.ac) # null model ranked higher than autocorrelated model
+
+
+## Rosedale autocorrelation
+DBR_RD_mod.ac <- gls(second_broods/early_nests~year, data=subset(dbr_df, site == "rosedale"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(DBR_RD_mod.ac) # phi=166312
+# create null model with gls() but without correlation term, to compare against .ac model
+DBR_RD_mod.null <- gls(second_broods/early_nests~year, data=subset(dbr_df, site == "rosedale"), na.action=na.omit)
+acf(residuals(DBR_RD_mod.null)) # autocorrelation plot
+plot(residuals(DBR_RD_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(DBR_RD_mod.null, DBR_RD_mod.ac) # no difference in the log likelihoods of the two models (3.29933 vs. 3.210084, p=0.6727)
+# choose best model using AIC model selection
+model.sel(DBR_RD_mod.null, DBR_RD_mod.ac) # null model ranked higher than autocorrelated model
+
+#######################################
+
+##### Binomial GLMM
+# y = dbr (double brooding rate)
+# fixed effect = year (scaled)
+# interaction term site:scale(year)
+# random effects = year, site
+
+# create column of numbered observations to fit an observation level random effect
+dbr_df$obs<-seq(nrow(dbr_df))
+
+# binomial GLMM 
+DBR.glmm1 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+(1|year)+(1|site)+(1|obs),data=dbr_df, family=binomial)
+summary(DBR.glmm1)
+# remove year random effect as variance is zero
+DBR.glmm2 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+(1|site)+(1|obs),data=dbr_df, family=binomial)
+summary(DBR.glmm2)
+
+## unscale year by dividing the coefficient by the scaling
+year.unscaled <- summary(DBR.glmm2)$coefficients[2,1]/attr(scale(dbr_df$year),"scaled:scale")
+year.unscaled
+# back transform coefficients from log odds scale to proportion
+plogis(year.unscaled)
+## intercept
+intercept.unscaled <- summary(DBR.glmm2)$coefficients[1,1]-(summary(DBR.glmm2)$coefficients[2,1]/attr(scale(dbr_df$year),"scaled:scale"))*attr(scale(dbr_df$year),"scaled:center")
+
+# calculate percentage change in DBR across study period
+DBR_before <- year.unscaled*1995 + intercept.unscaled # calculate y (TO) at start of study period
+DBR_now <- year.unscaled*2019 + intercept.unscaled # calculate y (TO) at end of study period 
+DBR_change <- 100*(plogis(DBR_now) - plogis(DBR_before))  # subtract exponentiated y at end of study period from start of study period
+
+
+## test for interaction between site:year - does the trend of dbr over time differ between sites?
+# binomial GLMM with interaction 
+DBR.glmm3 <- glmer(cbind(second_broods, early_nests-second_broods)~scale(year)+scale(year):site+(1|site)+(1|obs),data=dbr_df, family=binomial)
+summary(DBR.glmm3) 
+anova(DBR.glmm2, DBR.glmm3) # interaction is not significant
+
+##### model diagnostics
+## using DHARMa package
+simulationOutput <- simulateResiduals(fittedModel = DBR.glmm2)
+testResiduals(simulationOutput) # tests for uniformity, outliers and dispersion
+plot(simulationOutput) # QQ plot residuals with KS test, dispersion test and outlier test; and residual vs. predicted plot with combined adjusted quantile test
+testZeroInflation(simulationOutput) # tests for zero inflation
+## assumptions tests results
+# all tests satisfied
+# but - quantile deviations detected (but combined adjusted quantile test n.s.)
+## using sjPlot package
+plot_model(DBR.glmm2, type = "diag") # random effect QQ-plot
+# all random effects come from a normal distribution (fit straight line)
+# except for year re is a flat line ??
+### Ally says this is all fine
+
+## plotting, trying with code from https://ourcodingclub.github.io/tutorials/mixed-models/#presenting
+# create df of predicted values for each year based on the glmm
+pred.mm <- ggpredict(DBR.glmm1, terms = c("year"))  # this gives overall predictions for the model
+std.error <- sd(pred.mm$predicted)/sqrt(length((pred.mm$predicted))) # calculate se from predictions
+
+# plot the predictions 
+(ggplot(pred.mm) + 
+                geom_line(aes(x = x, y = predicted)) + # slope         
+                geom_point(data = dbr_df2, aes(x = year, y = dbr, colour = site)) + # adding the raw data (scaled values)
+                geom_ribbon(aes(x = x, ymin = predicted - std.error, ymax = predicted + std.error), 
+                            fill = "lightgrey", alpha = 0.5) +  # error band
+                labs(x = "Year", y = "Double brooding rate", title = "") + 
+                theme_classic() +
+                labs(color = "Site") +
+                scale_colour_discrete(labels=c("Glen Clunie", "Glen Effock", "Rosedale"))
+)
+
+####### test whether first brood laying date predicts double brooding rate
+
+### dataframe manipulation
+dbr_ld_df <- breeding_sites %>% # create a new dataframe called dbr_df, and from the breeding_sites dataframe...
+  select(site, year, mean_first_egg, early_nests, second_broods) %>% # select only the columns site, year and dbr
+  na.omit(breeding_sites) # remove all rows with NA
+dbr_ld_df$obs<-seq(nrow(dbr_ld_df))
+
+# include year as a predictor - does laying date explain any variation in dbr independent of year?
+DBR_LD_mod3 <-glmer(cbind(second_broods, early_nests-second_broods)~mean_first_egg+scale(year)+(1|site)+(1|obs)+(1|year), data=dbr_ld_df, family=binomial)
+summary(DBR_LD_mod3)
+# year random effect removed from model as variance is very small
+DBR_LD_mod4 <-glmer(cbind(second_broods, early_nests-second_broods)~mean_first_egg+scale(year)+(1|site)+(1|obs), data=dbr_ld_df, family=binomial)
+summary(DBR_LD_mod4)
+
+## plot
+pred.mm <- ggpredict(DBR_LD_mod3, terms = c("mean_first_egg"))  # this gives overall predictions for the model
+(ggplot(pred.mm) + 
+    geom_line(aes(x = x, y = predicted)) + # slope         
+    geom_point(data = dbr_ld_df, aes(x = mean_first_egg, y = second_broods/early_nests, colour = site)) + # adding the raw data (scaled values)
+    geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                fill = "lightgrey", alpha = 0.5) +  # error band
+    labs(x = "First brood laying date (April days)", y = "Double brooding rate", title = "") + 
+    theme_classic() +
+    labs(color = "Site") +
+    scale_color_manual(values=c("#4477AA", "#CCBB44", "#AA3377"), 
+                       labels=c("Glen Clunie", "Glen Effock", "Rosedale"))
+)
+
+####### calculate mean annual sample size for double brooding rate data
+dbr_df2 <- dbr_df %>%
+  group_by(year) %>%
+  summarise(sample=sum(early_nests))
+mean_annual_sample <- mean(dbr_df2$sample)
+
+####################################################
+
+############ apparent nest success ############
+
+## dataframe manipulation for apparent nest success
+ans_df <- breeding_sites %>% # create a new dataframe called ans_df, and from the breeding_sites dataframe...
+  select(site, year, nests_monitored, successful_nests) %>% # select only the columns site, year, nests_monitored, successful_nests, unsuccessful_nests
+  na.omit(breeding_sites) # remove all rows with NA
+
+## GLM for Glen Clunie (GC) ANS 
+ANS_GC_mod <-glm(cbind(successful_nests, nests_monitored - successful_nests)~year, data=subset(ans_df, site == "glen_clunie"), family=binomial)
+summary(ANS_GC_mod)
+# back transform the coefficients from the logit scale 
+plogis(ANS_GC_mod$coefficients) 
+# plot using ggplot
+pred.mm1 <- ggpredict(ANS_GC_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p1 <- (ggplot(pred.mm1) + 
+         geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+         geom_point(data=subset(ans_df, site == "glen_clunie"), aes(x = year, y = successful_nests/nests_monitored), colour="#4477AA", size=1.5) + 
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "", y = "", title = "") + 
+         theme_classic()
+) 
+# calculate percentage change in ANS across study period
+intercept <- coef(ANS_GC_mod)[1]
+year <- coef(ANS_GC_mod)[2]
+ANS_before <- year*1998 + intercept # calculate y at start of study period
+ANS_now <- year*2019 + intercept # calculate y at end of study period 
+ANS_change <- 100*(plogis(ANS_now) - plogis(ANS_before))  # subtract exponentiated y at end of study period from start of study period
+
+
+## GLM for Glen Effock (GEF) ANS 
+ANS_GEF_mod <-glm(cbind(successful_nests, nests_monitored - successful_nests)~year, data=subset(ans_df, site == "glen_effock"), family=binomial)
+summary(ANS_GEF_mod)
+# back transform the coefficients from the logit scale 
+plogis(ANS_GEF_mod$coefficients) 
+# plot using ggplot
+pred.mm2 <- ggpredict(ANS_GEF_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p2 <- (ggplot(pred.mm2) + 
+         geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+         geom_point(data=subset(ans_df, site == "glen_effock"), aes(x = year, y = successful_nests/nests_monitored), colour="#CCBB44", size=1.5) + 
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "", y = "", title = "") + 
+         theme_classic()
+) 
+# calculate percentage change in ANS across study period
+intercept <- coef(ANS_GEF_mod)[1]
+year <- coef(ANS_GEF_mod)[2]
+ANS_before <- year*2002 + intercept # calculate y at start of study period
+ANS_now <- year*2009 + intercept # calculate y at end of study period 
+ANS_change <- 100*(plogis(ANS_now) - plogis(ANS_before))  # subtract exponentiated y at end of study period from start of study period
+
+
+## GLM for Long Mynd (LM) ANS 
+ANS_LM_mod <-glm(cbind(successful_nests, nests_monitored - successful_nests)~year, data=subset(ans_df, site == "long_mynd"), family=binomial)
+summary(ANS_LM_mod)
+# back transform the coefficients from the logit scale 
+plogis(ANS_LM_mod$coefficients) 
+# plot using ggplot
+pred.mm3 <- ggpredict(ANS_LM_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p3 <- (ggplot(pred.mm3) + 
+         geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+         geom_point(data=subset(ans_df, site == "long_mynd"), aes(x = year, y = successful_nests/nests_monitored), colour="#228833", size=1.5) + 
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "", y = "", title = "") + 
+         theme_classic()
+) 
+# calculate percentage change in ANS across study period
+intercept <- coef(ANS_LM_mod)[1]
+year <- coef(ANS_LM_mod)[2]
+ANS_before <- year*1997 + intercept # calculate y at start of study period
+ANS_now <- year*2003 + intercept # calculate y at end of study period 
+ANS_change <- 100*(plogis(ANS_now) - plogis(ANS_before))  # subtract exponentiated y at end of study period from start of study period
+
+
+## GLM for Rosedale (RD) ANS 
+ANS_RD_mod <-glm(cbind(successful_nests, nests_monitored - successful_nests)~year, data=subset(ans_df, site == "rosedale"), family=binomial)
+summary(ANS_RD_mod)
+# back transform the coefficients from the logit scale 
+plogis(ANS_RD_mod$coefficients) 
+# plot using ggplot
+pred.mm4 <- ggpredict(ANS_RD_mod, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p4 <- (ggplot(pred.mm4) + 
+         geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+         geom_point(data=subset(ans_df, site == "rosedale"), aes(x = year, y = successful_nests/nests_monitored), colour="#AA3377", size=1.5) + 
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "", y = "", title = "") + 
+         theme_classic()
+)
+# calculate percentage change in ANS across study period
+intercept <- coef(ANS_RD_mod)[1]
+year <- coef(ANS_RD_mod)[2]
+ANS_before <- year*2000 + intercept # calculate y at start of study period
+ANS_now <- year*2018 + intercept # calculate y at end of study period 
+ANS_change <- 100*(plogis(ANS_now) - plogis(ANS_before))  # subtract exponentiated y at end of study period from start of study period
+
+
+## combine plots
+ANS_trends.all <- plot_grid(p1,
+                            p2,
+                            p3,
+                            p4,
+                            labels = c("(a)", "(b)", "(c)", "(d)"), label_size = 10,
+                            ncol = 2,
+                            nrow = 2,
+                            rel_widths = c(2,2))
+# add year x axis label
+ANS_trends.all2 <- plot_grid(ANS_trends.all + theme(plot.margin=unit(c(0.3,0.2,-0.5,0.2), "cm")),
+                             top=textGrob("       Year"),
+                             nrow=2, rel_heights = c(10,0.5))
+
+# add territory occupancy y axis label
+ANS_trends.all3 <- plot_grid(top=textGrob("Apparent nest success", rot=90),
+                             ANS_trends.all2 + theme(plot.margin=unit(c(0.1,0.1,0,-0.4), "cm")),
+                             ncol = 2, rel_widths = c(0.5,10))
+
+ANS_trends.all3 # display plot
+
+### temporal autocorrelation tests
+# https://rpubs.com/markpayne/164550
+# generalised least squares fit model gls()
+
+## Glen Clunie autocorrelation
+ANS_GC_mod.ac <- gls(successful_nests/nests_monitored~year, data=subset(ans_df, site == "glen_clunie"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(ANS_GC_mod.ac) # phi=166312
+# create null model with gls() but without correlation term, to compare against .ac model
+ANS_GC_mod.null <- gls(successful_nests/nests_monitored~year, data=subset(ans_df, site == "glen_clunie"), na.action=na.omit)
+acf(residuals(ANS_GC_mod.null)) # autocorrelation plot
+plot(residuals(ANS_GC_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(ANS_GC_mod.null, ANS_GC_mod.ac) # no difference in the log likelihoods of the two models (3.29933 vs. 3.210084, p=0.6727)
+# choose best model using AIC model selection
+model.sel(ANS_GC_mod.null, ANS_GC_mod.ac) # null model ranked higher than autocorrelated model
+
+## Glen Effock autocorrelation
+ANS_GEF_mod.ac <- gls(successful_nests/nests_monitored~year, data=subset(ans_df, site == "glen_effock"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(ANS_GEF_mod.ac) # phi=166312
+# create null model with gls() but without correlation term, to compare against .ac model
+ANS_GEF_mod.null <- gls(successful_nests/nests_monitored~year, data=subset(ans_df, site == "glen_effock"), na.action=na.omit)
+acf(residuals(ANS_GEF_mod.null)) # autocorrelation plot
+plot(residuals(ANS_GEF_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(ANS_GEF_mod.null, ANS_GEF_mod.ac) # no difference in the log likelihoods of the two models (3.29933 vs. 3.210084, p=0.6727)
+# choose best model using AIC model selection
+model.sel(ANS_GEF_mod.null, ANS_GEF_mod.ac) # null model ranked higher than autocorrelated model
+
+## Long Mynd autocorrelation
+ANS_LM_mod.ac <- gls(successful_nests/nests_monitored~year, data=subset(ans_df, site == "long_mynd"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(ANS_LM_mod.ac) # phi=166312
+# create null model with gls() but without correlation term, to compare against .ac model
+ANS_LM_mod.null <- gls(successful_nests/nests_monitored~year, data=subset(ans_df, site == "long_mynd"), na.action=na.omit)
+acf(residuals(ANS_LM_mod.null)) # autocorrelation plot
+plot(residuals(ANS_LM_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(ANS_LM_mod.null, ANS_LM_mod.ac) # no difference in the log likelihoods of the two models (3.29933 vs. 3.210084, p=0.6727)
+# choose best model using AIC model selection
+model.sel(ANS_LM_mod.null, ANS_LM_mod.ac) # null model ranked higher than autocorrelated model
+
+## Rosedale autocorrelation
+ANS_RD_mod.ac <- gls(successful_nests/nests_monitored~year, data=subset(ans_df, site == "rosedale"), correlation=corAR1(form=~year), na.action=na.omit)
+summary(ANS_RD_mod.ac) # phi=166312
+# create null model with gls() but without correlation term, to compare against .ac model
+ANS_RD_mod.null <- gls(successful_nests/nests_monitored~year, data=subset(ans_df, site == "rosedale"), na.action=na.omit)
+acf(residuals(ANS_RD_mod.null)) # autocorrelation plot
+plot(residuals(ANS_RD_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(ANS_RD_mod.null, ANS_RD_mod.ac) # no difference in the log likelihoods of the two models (3.29933 vs. 3.210084, p=0.6727)
+# choose best model using AIC model selection
+model.sel(ANS_RD_mod.null, ANS_RD_mod.ac) # null model ranked higher than autocorrelated model
+
+
+#####################################################################
+
+####### ANS trend across sites using binomial glmm
+
+# create variable obs to include observation level random effect
+ans_df$obs<-seq(nrow(ans_df))
+
+# glmm
+ANS.glmm1 <- glmer(cbind(successful_nests, nests_monitored-successful_nests)~scale(year)+
+                                     (1|year)+(1|site)+(1|obs), data=ans_df, family=binomial)
+summary(ANS.glmm1)
+# remove year random effect as variance is very small
+ANS.glmm2 <- glmer(cbind(successful_nests, nests_monitored-successful_nests)~scale(year)+
+                     (1|site)+(1|obs), data=ans_df, family=binomial)
+summary(ANS.glmm2)
+
+## unscale year by dividing the coefficient by the scaling
+year.unscaled <- summary(ANS.glmm2)$coefficients[2,1]/attr(scale(ans_df$year),"scaled:scale")
+# back transform coefficients from log odds scale to proportion
+plogis(year.unscaled)
+## intercept
+intercept.unscaled <- summary(ANS.glmm2)$coefficients[1,1]-(summary(ANS.glmm2)$coefficients[2,1]/attr(scale(ans_df$year),"scaled:scale"))*attr(scale(ans_df$year),"scaled:center")
+
+# calculate percentage change in DBR across study period
+ANS_before <- year.unscaled*1997 + intercept.unscaled # calculate y (TO) at start of study period
+ANS_now <- year.unscaled*2019 + intercept.unscaled # calculate y (TO) at end of study period 
+ANS_change <- 100*(plogis(ANS_now) - plogis(ANS_before))  # subtract exponentiated y at end of study period from start of study period
+
+## test for interaction between site:year
+ANS.glmm3 <- glmer(cbind(successful_nests, nests_monitored-successful_nests)~scale(year)+
+                     site:scale(year)+(1|site)+(1|obs), data=ans_df, family=binomial)
+anova(ANS.glmm2, ANS.glmm3) # interaction is not significant
+
+####################################################
+
+############ mayfield nest success ############
+
+## dataframe manipulation for GC Mayfield nest success, 
+# create a new dataframe called mns_df with Mayfield NS averaged over early and late nests and apparent NS for Glen Clunie
+mns_df <- breeding_sites %>% 
+  mutate(Mayfield_ns_overall=rowMeans(select(breeding_sites, c(Mayfield_ns_early,Mayfield_ns_late)))) %>% # create new column with mean of early and late MNS, so that MNS is comparable with ANS
+  select(site, year, nests_monitored, successful_nests, Mayfield_ns_early, Mayfield_ns_late, Mayfield_ns_overall) %>% # select only the columns site, year, apparent_ns, Mayfield_ns_overall
+  na.omit(breeding_sites) # remove all rows with NA
+
+## plot first (early) and second (late) brood Mayfield nest success for glen clunie
+
+#### MNS trends for first (early) and second (late) broods
+
+### trend in early MNS over time (quasibinomial glm)
+EMNS_GC_mod.qb <- glm(Mayfield_ns_early~year, data = mns_df, family=quasibinomial())
+summary(EMNS_GC_mod.qb)
+# back transform the coefficients from the logit scale 
+plogis(EMNS_GC_mod.qb$coefficients) 
+# plot using ggplot
+pred.mm5 <- ggpredict(EMNS_GC_mod.qb, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_EMNS <- (ggplot(pred.mm5) + 
+         geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+         geom_point(data=mns_df, aes(x = year, y = Mayfield_ns_early), colour="#4477AA", size=1.5) + 
+         geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                     fill = "lightgrey", alpha = 0.5) +  # error band
+         labs(x = "", y = "Mayfield nest success", title = "") + 
+           ylim(0.3,1) +
+         theme_classic()
+) 
+# calculate percentage change in ANS across study period
+intercept <- coef(EMNS_GC_mod.qb)[1]
+year <- coef(EMNS_GC_mod.qb)[2]
+MNS_before <- year*2000 + intercept # calculate y at start of study period
+MNS_now <- year*2019 + intercept # calculate y at end of study period 
+MNS_change <- 100*(plogis(MNS_now) - plogis(MNS_before))  # subtract exponentiated y at end of study period from start of study period
+
+
+### trend in early MNS over time (quasibinomial glm)
+LMNS_GC_mod.qb <- glm(Mayfield_ns_late~year, data = mns_df, family=quasibinomial())
+summary(LMNS_GC_mod.qb)
+# back transform the coefficients from the logit scale 
+plogis(LMNS_GC_mod.qb$coefficients) 
+# plot using ggplot
+pred.mm6 <- ggpredict(LMNS_GC_mod.qb, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+plot_LMNS <- (ggplot(pred.mm6) + 
+                geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+                geom_point(data=mns_df, aes(x = year, y = Mayfield_ns_late), colour="#4477AA", size=1.5) + 
+                geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                            fill = "lightgrey", alpha = 0.5) +  # error band
+                labs(x = "", y = "", title = "") + 
+                ylim(0.3,1) +
+                theme_classic()
+) 
+# calculate percentage change in MNS across study period
+intercept <- coef(LMNS_GC_mod.qb)[1]
+year <- coef(LMNS_GC_mod.qb)[2]
+MNS_before <- year*2000 + intercept # calculate y at start of study period
+MNS_now <- year*2019 + intercept # calculate y at end of study period 
+MNS_change <- 100*(plogis(MNS_now) - plogis(MNS_before))  # subtract exponentiated y at end of study period from start of study period
+
+
+MNS_plot <- plot_grid(plot_EMNS + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                      plot_LMNS + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                      labels = c("(a)", "(b)"), label_size = 10,
+                      ncol = 2)
+
+MNS_plot2 <- plot_grid(MNS_plot + theme(plot.margin=unit(c(0.3,0.2,-0.5,0.3), "cm")),
+                             top=textGrob("       Year"),
+                             nrow=2, rel_heights = c(10,1))
+MNS_plot2
+
+##### temporal autocorrelation tests
+
+## first brood autocorrelation
+EMNS_mod.ac <- gls(Mayfield_ns_early~year, data=mns_df, correlation=corAR1(form=~year), na.action=na.omit)
+summary(EMNS_mod.ac) # phi=166312
+# create null model with gls() but without correlation term, to compare against .ac model
+EMNS_mod.null <- gls(Mayfield_ns_early~year, data=mns_df, na.action=na.omit)
+acf(residuals(EMNS_mod.null)) # autocorrelation plot
+plot(residuals(EMNS_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(EMNS_mod.null, EMNS_mod.ac) # no difference in the log likelihoods of the two models (3.29933 vs. 3.210084, p=0.6727)
+# choose best model using AIC model selection
+model.sel(EMNS_mod.null, EMNS_mod.ac) # null model ranked higher than autocorrelated model
+
+## second brood autocorrelation
+LMNS_mod.ac <- gls(Mayfield_ns_late~year, data=mns_df, correlation=corAR1(form=~year), na.action=na.omit)
+summary(LMNS_mod.ac) # phi=166312
+# create null model with gls() but without correlation term, to compare against .ac model
+LMNS_mod.null <- gls(Mayfield_ns_late~year, data=mns_df, na.action=na.omit)
+acf(residuals(LMNS_mod.null)) # autocorrelation plot
+plot(residuals(LMNS_mod.null)) # residuals plot
+# compare models using ANOVA
+anova(LMNS_mod.null, LMNS_mod.ac) # no difference in the log likelihoods of the two models (3.29933 vs. 3.210084, p=0.6727)
+# choose best model using AIC model selection
+model.sel(LMNS_mod.null, LMNS_mod.ac) # null model ranked higher than autocorrelated model
+
+
+##### compare overall MNS (mean of first and second broods) to ANS
+
+## quasibinomial glm with logistic link function for MNS
+MNS_GC_mod.qb <- glm(Mayfield_ns_overall~year, data = mns_df, family=quasibinomial())
+summary(MNS_GC_mod.qb)
+MNS_GC_mod.qb2 <- glm(Mayfield_ns_overall~scale(year), data = mns_df, family=quasibinomial())
+summary(MNS_GC_mod.qb2)
+
+## ANS GC mod
+ANS_GC_mod2 <-glm(cbind(successful_nests, nests_monitored - successful_nests)~year, data=mns_df, family=binomial)
+summary(ANS_GC_mod2)
+
+
+## unscale year by dividing the coefficient by the scaling
+year.unscaled <- summary(ANS.glmm2)$coefficients[2,1]/attr(scale(ans_df$year),"scaled:scale")
+# back transform coefficients from log odds scale to proportion
+plogis(year.unscaled)
+## intercept
+intercept.unscaled <- summary(ANS.glmm2)$coefficients[1,1]-(summary(ANS.glmm2)$coefficients[2,1]/attr(scale(ans_df$year),"scaled:scale"))*attr(scale(ans_df$year),"scaled:center")
+
+# plot using ggplot
+# MNS plot
+pred.mm7 <- ggpredict(MNS_GC_mod.qb, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p7 <- (ggplot(pred.mm7) + 
+                geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+                geom_point(data=mns_df, aes(x = year, y = Mayfield_ns_overall), colour="#4477AA", size=1.5) +
+                geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                            fill = "lightgrey", alpha = 0.5) +  # error band
+                labs(x = "", y = "Nest success", title = "") + 
+                ylim(0.4,1) +
+                theme_classic()
+)
+# calculate percentage change in ANS across study period
+intercept <- coef(MNS_GC_mod.qb)[1]
+year <- coef(MNS_GC_mod.qb)[2]
+MNS_before <- year*2000 + intercept # calculate y at start of study period
+MNS_now <- year*2019 + intercept # calculate y at end of study period 
+MNS_change <- 100*(plogis(MNS_now) - plogis(MNS_before))  # subtract exponentiated y at end of study period from start of study period
+MNS_2000 <- plogis(MNS_before)
+
+# ANS plot
+pred.mm8 <- ggpredict(ANS_GC_mod2, terms = c("year"))  # this gives overall predictions for the model
+# plot the predictions 
+p8 <- (ggplot(pred.mm8) + 
+        geom_line(aes(x = x, y = predicted), linetype="dashed") + # slope         
+        geom_point(data=mns_df, aes(x = year, y = successful_nests/nests_monitored), colour="#4477AA", size=1.5) +
+        geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), 
+                    fill = "lightgrey", alpha = 0.5) +  # error band
+        labs(x = "", y = "", title = "") + 
+        ylim(0.4,1) +
+        theme_classic()
+)
+# calculate intercept difference between ANS and MNS
+intercept <- coef(ANS_GC_mod2)[1]
+year <- coef(ANS_GC_mod2)[2]
+MNS_before2 <- year*2000 + intercept # calculate y at start of study period
+MNS_now <- year*2019 + intercept # calculate y at end of study period 
+MNS_change <- 100*(plogis(MNS_now) - plogis(MNS_before2))  # subtract exponentiated y at end of study period from start of study period
+ANS_2000 <- plogis(MNS_before2)
+intercept_difference <- ANS_2000 - MNS_2000
+
+MvANS_plot <- plot_grid(p7 + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                      p8 + theme(plot.margin=unit(c(0,0,0,0), "cm")),
+                      labels = c("(a)", "(b)"), label_size = 10,
+                      ncol = 2)
+
+MvANS_plot2 <- plot_grid(MvANS_plot + theme(plot.margin=unit(c(0.3,0.2,-0.5,0.3), "cm")),
+                       top=textGrob("       Year"),
+                       nrow=2, rel_heights = c(10,1))
+MvANS_plot2
+
+####### calculate mean annual sample size for nest success data
+
+## create df with year, site, territory_occupancy, mean_first_egg
+### create new dataframe with just laying date data and omitted NA rows
+ns_df2 <- breeding_sites %>% # create a new dataframe called ld_df, and from the breeding_sites dataframe...
+  select(year, nests_monitored, successful_nests) %>% # select only the columns site, year and mean_first_egg
+  na.omit(breeding_sites) # remove all rows with NA
+# laying date data all in units of April days 
+ns_df2.2 <- ns_df2 %>%
+  group_by(year) %>%
+  summarise(sample=sum(nests_monitored))
+mean_annual_sample <- mean(ns_df2.2$sample)

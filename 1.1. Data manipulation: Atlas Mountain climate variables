@@ -1,0 +1,111 @@
+rm(list=ls())
+
+##### Atlas climate variables #####
+
+### in this code:
+# creating lagged Atlas climate variables 
+# creating one dataframe with all ring ouzel responses and Atlas climate variables 
+
+## load packages
+library(dplyr) # data manipulation
+library(tidyr) # data manipulation
+library("readxl") # open excel sheets
+
+#########################################################
+
+### March-May precipitation (lag1 and lag2)
+# pptAT03_05<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptAT03_05.xlsx")
+pptAT03_05<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/Atlas_climate/pptAT03_05.xlsx")
+pptAT03_05.df <- separate(pptAT03_05, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+pptAT03_05.df2 <- subset(pptAT03_05.df, Value == "1") # remove all rows with Value 0 (outside the overwintering range)
+# create new columns with lagged climate variables
+lag_pptAT03_05.df <- pptAT03_05.df2 %>%
+  mutate(lag1_pptAT03_05=lag(MEAN,1)) %>% # 1 year lag
+  mutate(lag2_pptAT03_05=lag(MEAN,2)) %>% # 2 year lag
+  select(year, lag1_pptAT03_05, lag2_pptAT03_05)
+lag_pptAT03_05.df$year <- as.numeric(lag_pptAT03_05.df$year) # convert year from character to numeric variable
+colnames(lag_pptAT03_05.df) <- c("year", "lag1_pptAT03_05", "lag2_pptAT03_05") # change column names
+
+### November-February precipitation (lag1)
+# pptAT11_02<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/pptAT11_02.xlsx")
+pptAT11_02<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/Atlas_climate/pptAT11_02.xlsx")
+pptAT11_02.df <- separate(pptAT11_02, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+pptAT11_02.df2 <- subset(pptAT11_02.df, Value == "1") # remove all rows with Value 0 (outside the overwintering range)
+# create new columns with lagged climate variables
+lag_pptAT11_02.df <- pptAT11_02.df2 %>%
+  mutate(lag1_pptAT11_02=lag(MEAN,1)) %>% # 1 year lag
+  select(year, lag1_pptAT11_02)
+lag_pptAT11_02.df$year <- as.numeric(lag_pptAT11_02.df$year) # convert year from character to numeric variable
+colnames(lag_pptAT11_02.df) <- c("year", "lag1_pptAT11_02") # change column names
+
+### November-February minimum temperature (lag1)
+# tminAT11_02<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tminAt11_02_quarts.xlsx")
+tminAT11_02<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/Atlas_climate/tminAt11_02_quarts.xlsx")
+tminAT11_02.df <- separate(tminAT11_02, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+tminAT11_02.df <- subset(tminAT11_02.df, Value == "1") # remove all rows with Value 0 (outside the overwintering range)
+#aggregate pairs of rows to calculate each winter's mean tmin, first create new column with paired years
+tminAT11_02.df$winter_year <- c("1986", "1986", "1987", "1987", "1988", "1988", "1989", "1989", "1990", "1990", "1991", "1991", "1992", "1992", "1993", "1993", "1994", "1994", "1995", "1995", "1996", "1996", "1997", "1997", "1998", "1998", "1999", "1999", "2000", "2000", "2001", "2001", "2002", "2002", "2003", "2003", "2004", "2004", "2005", "2005", "2006", "2006", "2007", "2007", "2008", "2008", "2009", "2009", "2010", "2010", "2011", "2011", "2012", "2012", "2013", "2013", "2014", "2014", "2015", "2015", "2016", "2016", "2017", "2017", "2018", "2018", "2019", "2019", "2020")
+tminAT11_02.df$winter_year <- as.numeric(tminAT11_02.df$winter_year) # convert year from character to numeric variable
+# calculate a mean for each winter year (winter year 1986 = Nov-Dec of 1986 + Jan-Feb of 1987) and calculate 1 year lag
+tminAT11_02.df <- tminAT11_02.df %>%
+  group_by(winter_year) %>%
+  mutate(winter_mean=mean(MEAN)) %>% # calculate a mean for each winter year
+  slice(1) %>% # remove duplicated rows
+  select(winter_year, winter_mean)
+tminAT11_02.df$winter_year <- as.numeric(tminAT11_02.df$winter_year)
+colnames(tminAT11_02.df) <- c("winter_year", "tminAT11_02")
+# create new column with lagged climate variable
+lag1_tminAT11_02.df <- tminAT11_02.df %>%
+  mutate(year=winter_year+1)
+colnames(lag1_tminAT11_02.df) <- c("winter_year", "lag1_tminAT11_02", "year")
+# remove winter_year=2020 (year=2021) row as 2020 winter year does not include 2021 Jan-Feb data
+lag1_tminAT11_02.df2 <- lag1_tminAT11_02.df[-c(35),]
+
+### November-February maximum temperature (lag1)
+# tmaxAT11_02<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/climate_data/Atlas_climate/tmaxAt11_02_quarts.xlsx")
+tmaxAT11_02<-read_excel("~/Dropbox/1. DISS/Sorrel/data/climate_data/Atlas_climate/tmaxAt11_02_quarts.xlsx")
+tmaxAT11_02.df <- separate(tmaxAT11_02, "StdTime", c("year", "month", "day"), sep = "-") # separate StdTime into year, month, and day
+tmaxAT11_02.df <- subset(tmaxAT11_02.df, Value == "1") # remove all rows with Value 0 (outside the overwintering range)
+#aggregate pairs of rows to calculate each winter's mean tmin, first create new column with paired years
+tmaxAT11_02.df$winter_year <- c("1986", "1986", "1987", "1987", "1988", "1988", "1989", "1989", "1990", "1990", "1991", "1991", "1992", "1992", "1993", "1993", "1994", "1994", "1995", "1995", "1996", "1996", "1997", "1997", "1998", "1998", "1999", "1999", "2000", "2000", "2001", "2001", "2002", "2002", "2003", "2003", "2004", "2004", "2005", "2005", "2006", "2006", "2007", "2007", "2008", "2008", "2009", "2009", "2010", "2010", "2011", "2011", "2012", "2012", "2013", "2013", "2014", "2014", "2015", "2015", "2016", "2016", "2017", "2017", "2018", "2018", "2019", "2019", "2020")
+tmaxAT11_02.df$winter_year <- as.numeric(tmaxAT11_02.df$winter_year) # convert year from character to numeric variable
+# calculate a mean for each winter year (winter year 1986 = Nov-Dec of 1986 + Jan-Feb of 1987) and calculate 1 year lag
+tmaxAT11_02.df <- tmaxAT11_02.df %>%
+  group_by(winter_year) %>%
+  mutate(winter_mean=mean(MEAN)) %>% # calculate a mean for each winter year
+  slice(1) %>% # remove duplicated rows
+  select(winter_year, winter_mean)
+tmaxAT11_02.df$winter_year <- as.numeric(tmaxAT11_02.df$winter_year)
+colnames(tmaxAT11_02.df) <- c("winter_year", "tmaxAT11_02")
+# create new column with lagged climate variable
+lag1_tmaxAT11_02.df <- tmaxAT11_02.df %>%
+  mutate(year=winter_year+1)
+colnames(lag1_tmaxAT11_02.df) <- c("winter_year", "lag1_tmaxAT11_02", "year")
+lag1_tmaxAT11_02.df2 <- lag1_tmaxAT11_02.df[-c(35),]
+
+
+##############################################
+
+### join all climate variables to breeding_sites df
+## Atlas climate variables
+# March-May precipitation of preceding year ("lag1_pptAT03_05" in lag_pptAT03_05.df)
+# March-May precipitation of two years prior ("lag2_pptAT03_05" in lag_pptAT03_05.df)
+# November-February precipitation year before breeding ("lag1_pptAT11_02" in lag_pptAT11_02.df)
+# November-February minimum temperature year before breeding ("lag1_tminAT11_02" in lag1_tminAT11_02.df2) 
+# November-February maximum temperature year before breeding ("lag1_tmaxAT11_02" in lag1_tmaxAT11_02.df2) 
+
+# breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx")
+breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
+library(writexl)
+
+# join Atlas climate and breeding sites dataframes
+RZ_ATclimate <- breeding_sites %>%
+  left_join(lag_pptAT03_05.df, by="year") %>%
+  left_join(lag_pptAT11_02.df, by="year") %>%
+  left_join(lag1_tminAT11_02.df2, by="year") %>%
+  left_join(lag1_tmaxAT11_02.df2, by="year") %>%
+  select(site, year, territory_occupancy, early_nests, second_broods, mean_first_egg, 
+         earliest_first_egg, mean_first_egg_late, Mayfield_ns_early, Mayfield_ns_late, nests_monitored, successful_nests, 
+         lag1_pptAT03_05, lag2_pptAT03_05, lag1_pptAT11_02, lag1_tminAT11_02, lag1_tmaxAT11_02)
+# export to excel
+write_xlsx(RZ_ATclimate, "~/Dropbox/1. DISS/Sorrel/data/RZ_ATclimate.xlsx")

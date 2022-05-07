@@ -1,6 +1,3 @@
-###################################################################
-
-############### Atlas climate variables ################
 
 ## load packages
 library("readxl")
@@ -18,7 +15,10 @@ library(ggiraphExtra)
 library(interactions)
 library(broom)
 library(broom.mixed)
-library(stargazer)
+
+###################################################################
+
+############### Atlas climate variables ################
 
 # RZ_AT_climate<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/RZ_ATclimate.xlsx")
 RZ_AT_climate<-read_excel("~/Dropbox/1. DISS/Sorrel/data/RZ_ATclimate.xlsx")

@@ -1,13 +1,14 @@
 rm(list=ls())
 
 ### in this code:
-# creating lagged  climate variables 
+# creating lagged climate variables 
 # creating one dataframe per climate variable group with all ring ouzel responses and climate variables 
 
 ## load packages
 library(dplyr) # data manipulation
 library(tidyr) # data manipulation
-library("readxl") # open excel sheets
+library("readxl") # read excel sheets
+library(writexl) # write excel sheets
 
 #########################################################
 
@@ -98,7 +99,6 @@ lag1_tmaxAT11_02.df2 <- lag1_tmaxAT11_02.df[-c(35),]
 
 # breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx")
 breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
-library(writexl)
 
 # join Atlas climate and breeding sites dataframes
 RZ_ATclimate <- breeding_sites %>%
@@ -1340,7 +1340,6 @@ lag_tmaxUK07_08.df <- rbind(lag_tmaxGC07_08.df, lag_tmaxGEF07_08.df, lag_tmaxGE0
 ##### join UK_ppt to breeding sites data
 # breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx")
 breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
-library(writexl)
 ## join
 # UK_tmax03_04.df
 # UK_tmax05_06.df
@@ -2508,7 +2507,6 @@ lag_tminUK07_08.df <- rbind(lag_tminGC07_08.df, lag_tminGEF07_08.df, lag_tminGE0
 ##### join UK_ppt to breeding sites data
 # breeding_sites<-read_excel("~/Dropbox/students/A_undergraduates/2022/Sorrel/data/breeding_sites.xlsx")
 breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
-library(writexl)
 ## join
 # UK_tmax03_04.df
 # UK_tmax05_06.df

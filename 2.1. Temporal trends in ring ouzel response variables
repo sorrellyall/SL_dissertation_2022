@@ -6,25 +6,19 @@ rm(list=ls())
 
 ## load packages
 library("readxl")
-library(dplyr)
-library(lme4)
-library(ggeffects) # to plot glmm effects
-library(ggplot2)
-library(tidyverse) 
-library(DHARMa) # to diagnose glmms
-library(sjPlot)
-library(sjmisc)
-library(glmmTMB)
-library(TMB)
-library(glmm)
+library(dplyr) # for data manipulation
+library(lme4) # for fitting mixed models
+library(ggplot2) # for plotting
+library(ggeffects) # for plotting glmm effects
+library(tidyverse) # for plotting glmm effects
+library(DHARMa) # for diagnosing glmms
+library(sjPlot) # for diagnosing glmms and plotting interactions
 library(nlme) # for temporal autocorrelation tests
 library(MuMIn) # for temporal autocorrelation tests
 library(inlmisc) # for colour-blind friendly colour palette
-library(DMwR2)
-library(interactions)
-library(grid)
-library(gridExtra)
-library(cowplot)
+library(grid) # for plotting multi-panel grids
+library(gridExtra) # for plotting multi-panel grids
+library(cowplot) # for plotting multi-panel grids
 
 ####################################################
 
@@ -37,7 +31,6 @@ breeding_sites<-read_excel("~/Dropbox/1. DISS/Sorrel/data/breeding_sites.xlsx")
 # Response variable y = territory_occupancy
 # Explanatory variable x = year
 # Error structure = Quasipoisson (residuals are overdispersed for Poisson error structure, see below)
-# use subset() to use only one site in each model
 
 ## Poisson error structure test
 TO_GC_mod_poisson <- glm(territory_occupancy~year, data=subset(breeding_sites, site == "glen_clunie"), family=poisson)

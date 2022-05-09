@@ -1,14 +1,18 @@
-library(dplyr) # data manipulation
-library("readxl") # open excel sheets
-library(lme4) # for lmms
-library(lmerTest)
-library(ggeffects) # to plot lmms
-library(ggplot2)
-library(tidyverse)
-library(grid) # for multi panel plots
-library(gridExtra)
-library(cowplot)
+## load packages
+library("readxl") # for reading excel sheets
+library(dplyr) # for data manipulation
+library(lme4) # for fitting mixed models
+library(ggplot2) # for plotting
+library(ggeffects) # for plotting glmm effects
+library(tidyverse) # for plotting glmm effects
+library(DHARMa) # for diagnosing glmms
+library(sjPlot) # for diagnosing glmms and plotting interactions
+library(nlme) # for temporal autocorrelation tests
+library(MuMIn) # for temporal autocorrelation tests
 library(inlmisc) # for colour-blind friendly colour palette
+library(grid) # for plotting multi-panel grids
+library(gridExtra) # for plotting multi-panel grids
+library(cowplot) # for plotting multi-panel grids
 
 #####################################################
 

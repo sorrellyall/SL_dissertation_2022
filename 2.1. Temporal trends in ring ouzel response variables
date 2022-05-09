@@ -1,4 +1,4 @@
-rm(list=ls())
+rm(list=ls()) # clear R's memory
 ### in this code:
 # tests for temporal trends in each ring ouzel response at each site plus temporal autocorrelation tests
 # tests for temporal trends in each ring ouzel response across sites

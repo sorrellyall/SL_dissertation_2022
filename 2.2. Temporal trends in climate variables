@@ -1,3 +1,7 @@
+rm(list=ls()) # clear R's memory
+### in this code:
+# tests for temporal trends in climate variables
+
 ## load packages
 library("readxl") # for reading excel sheets
 library(dplyr) # for data manipulation

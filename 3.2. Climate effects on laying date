@@ -35,12 +35,6 @@ RZ_ld_df <- RZ_AT_climate %>%
 hist(RZ_ld_df$mean_first_egg) 
 # data fits normal (Gaussian) distribution
 
-## LMM structure
-# y = territory_occupancy
-# fixed effects = year + clim_var
-# random effects = site
-# only test for interaction between site and clim_var if the clim_var effect is significant
-
 #########################################
 
 ### March-May precipitation the year before breeding (lag1_pptAT03_05) LMM
@@ -563,46 +557,6 @@ anova(NAO_03_05.lmm1, NAO_03_05.lmm2) # marginal effect of year+clim_var
 # compare model with just clim_var and TO to model without fixed effects
 NAO_03_05.lmm3 <- lmer(mean_first_egg~NAO_03_05+(1|site)+(1|year), data=RZ_ld_df)
 anova(NAO_03_05.lmm3, NAO_03_05.lmm2) # no effect of clim_var
-
-#############
-#### individual months
-
-### march_NAO
-# LMM with year and site random effects
-NAO_03.lmm1 <- lmer(mean_first_egg~scale(year)+march_NAO+(1|year)+(1|site), data=RZ_ld_df)
-summary(NAO_03.lmm1) 
-# drop fixed effects
-NAO_03.lmm2 <- lmer(mean_first_egg~(1|site)+(1|year), data=RZ_ld_df)
-# compare models
-anova(NAO_03.lmm1, NAO_03.lmm2) # no effect of year+clim_var
-# compare model with just clim_var and TO to model without fixed effects
-NAO_03.lmm3 <- lmer(mean_first_egg~march_NAO+(1|site)+(1|year), data=RZ_ld_df)
-anova(NAO_03.lmm3, NAO_03.lmm2) # no effect of clim_var
-
-### april_NAO
-# LMM with year and site random effects
-NAO_04.lmm1 <- lmer(mean_first_egg~scale(year)+april_NAO+(1|year)+(1|site), data=RZ_ld_df)
-summary(NAO_04.lmm1) 
-# drop fixed effects
-NAO_04.lmm2 <- lmer(mean_first_egg~(1|site)+(1|year), data=RZ_ld_df)
-# compare models
-anova(NAO_04.lmm1, NAO_04.lmm2) # effect of year+clim_var
-# compare model with just clim_var and TO to model without fixed effects
-NAO_04.lmm3 <- lmer(mean_first_egg~april_NAO+(1|site)+(1|year), data=RZ_ld_df)
-anova(NAO_04.lmm3, NAO_04.lmm2) # no effect of clim_var
-
-### may_NAO
-# LMM with year and site random effects
-NAO_05.lmm1 <- lmer(mean_first_egg~scale(year)+may_NAO+(1|year)+(1|site), data=RZ_ld_df)
-summary(NAO_05.lmm1) 
-# drop fixed effects
-NAO_05.lmm2 <- lmer(mean_first_egg~(1|site)+(1|year), data=RZ_ld_df)
-# compare models
-anova(NAO_05.lmm1, NAO_05.lmm2) # effect of year+clim_var
-# compare model with just clim_var and TO to model without fixed effects
-NAO_05.lmm3 <- lmer(mean_first_egg~may_NAO+(1|site)+(1|year), data=RZ_ld_df)
-anova(NAO_05.lmm3, NAO_05.lmm2) # no effect of clim_var
-
 
 ##### model diagnostics
 ## using DHARMa package

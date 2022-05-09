@@ -1,16 +1,22 @@
+rm(list=ls()) # clear R's memory
+### in this code:
+# tests for climate effects on territory occupancy
+
 ## load packages
-library("readxl")
-library(dplyr)
-library(lme4)
-library(lmerTest)
-library(ggeffects) # to plot glmm effects
-library(ggplot2)
-library(tidyverse) 
-library(DHARMa) # to diagnose glmms
-library(sjPlot)
-library(sjmisc)
-library(glmmTMB)
-library(TMB)
+library("readxl") # for reading excel sheets
+library(dplyr) # for data manipulation
+library(lme4) # for fitting mixed models
+library(ggplot2) # for plotting
+library(ggeffects) # for plotting glmm effects
+library(tidyverse) # for plotting glmm effects
+library(DHARMa) # for diagnosing glmms
+library(sjPlot) # for diagnosing glmms and plotting interactions
+library(nlme) # for temporal autocorrelation tests
+library(MuMIn) # for temporal autocorrelation tests
+library(inlmisc) # for colour-blind friendly colour palette
+library(grid) # for plotting multi-panel grids
+library(gridExtra) # for plotting multi-panel grids
+library(cowplot) # for plotting multi-panel grids
 
 ###############################################################################
 
